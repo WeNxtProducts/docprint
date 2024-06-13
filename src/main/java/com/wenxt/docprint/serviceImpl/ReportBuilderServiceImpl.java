@@ -1,5 +1,6 @@
 package com.wenxt.docprint.serviceImpl;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.time.LocalDate;
@@ -19,6 +20,8 @@ import com.wenxt.docprint.model.LjmReportBuilder;
 import com.wenxt.docprint.model.ReportBuilderRequest;
 import com.wenxt.docprint.repo.ReportBuilderRepo;
 import com.wenxt.docprint.service.ReportBuilderService;
+
+import jakarta.persistence.Column;
 
 @Service
 public class ReportBuilderServiceImpl implements ReportBuilderService {
@@ -55,16 +58,11 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 				setreportBuilderFields(template, entry.getValue());
 			}
 
-			try {
 				LjmReportBuilder savedTemplate = reportBuilderRepo.save(template);
 				response.put(statusCode, successCode);
 				response.put(messageCode, "Report Builder Details Created Successfully");
 				data.put("Id", savedTemplate.getRB_SYS_ID());
 				response.put("data", data);
-			} catch (Exception e) {
-				response.put("statusCode", errorCode);
-				response.put("message", "An error occurred: " + e.getMessage());
-			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.put("statusCode", errorCode);
@@ -183,6 +181,30 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 			response.put(messageCode, "Error deleting record with ID " + rbSysId + ": " + e.getMessage());
 			return response.toString();
 		}
+	}
+
+	@Override
+	public String getReportBuilder(Integer rbSysId) throws Exception{
+		Map<String, Object> parametermap = new HashMap<String, Object>();
+		JSONObject inputObject = new JSONObject();
+		Optional<LjmReportBuilder> optionalUser = reportBuilderRepo.findById(rbSysId);
+		LjmReportBuilder claim = optionalUser.get();
+		if (claim != null) {
+			for (int i = 0; i < claim.getClass().getDeclaredFields().length; i++) {
+				Field field = claim.getClass().getDeclaredFields()[i];
+				field.setAccessible(true);
+				String columnName = null;
+				if (field.isAnnotationPresent(Column.class)) {
+					Annotation annotation = field.getAnnotation(Column.class);
+					Column column = (Column) annotation;
+					Object value = field.get(claim);
+					columnName = column.name();
+					inputObject.put(columnName, value);
+				}
+			}
+		}
+		System.out.println(inputObject);
+		return inputObject.toString();
 	}
 
 }

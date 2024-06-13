@@ -10,4 +10,6 @@ public interface ReportBuilderService {
 
 	String deleteReportBuilder(Integer rbSysId);
 
+	String getReportBuilder(Integer rbSysId) throws Exception;
+
 }

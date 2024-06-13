@@ -65,7 +65,7 @@ public class SecurityConfig {
 				.and()
 				.authorizeHttpRequests().requestMatchers("/docparam/**").authenticated() 
 				.and()
-				.authorizeHttpRequests().requestMatchers("/ccdtls/**").authenticated() 
+				.authorizeHttpRequests().requestMatchers("/reportBuilder/**").authenticated() 
 //				.and()
 //				.authorizeHttpRequests().requestMatchers("/api/report/**").authenticated() 
 //				.and()
