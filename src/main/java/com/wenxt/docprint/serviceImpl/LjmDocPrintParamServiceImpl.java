@@ -20,7 +20,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.wenxt.docprint.dto.DocPrintParamDto;
-import com.wenxt.docprint.dto.DocPrintSetupDto;
 import com.wenxt.docprint.model.LjmDocprintParam;
 import com.wenxt.docprint.model.LjmDocprintSetup;
 import com.wenxt.docprint.repo.LjmdocPrinsetup;
@@ -31,19 +30,19 @@ import jakarta.persistence.Column;
 
 @Service
 public class LjmDocPrintParamServiceImpl implements LjmDocPrintParamService {
-	
+
 	@Value("${spring.message.code}")
 	private String messageCode;
- 
+
 	@Value("${spring.status.code}")
 	private String statusCode;
- 
+
 	@Value("${spring.data.code}")
 	private String dataCode;
- 
+
 	@Value("${spring.success.code}")
 	private String successCode;
- 
+
 	@Value("${spring.error.code}")
 	private String errorCode;
 
@@ -53,29 +52,34 @@ public class LjmDocPrintParamServiceImpl implements LjmDocPrintParamService {
 	@Autowired
 	private LjmdocPrinsetup setuprepo;
 
-	@Override
-	public String createDocparam(DocPrintParamDto param) {
+	public String createDocparam(DocPrintParamDto param, Long dPP_SYSID) {
 		JSONObject response = new JSONObject();
 		JSONObject data = new JSONObject();
 
 		try {
 			LjmDocprintParam docparam = new LjmDocprintParam();
 
+			// Assuming param.getDocPrintParam().getFormFields() returns a Map<String,
+			// String>
 			Map<String, Map<String, String>> fieldMaps = new HashMap<>();
 			fieldMaps.put("frontForm", param.getDocPrintParam().getFormFields());
+
+			// Adding the DPS_SYSID value to the frontForm map
+			fieldMaps.get("frontForm").put("LjmDocprintSetup", dPP_SYSID.toString());
+
 			for (Map.Entry<String, Map<String, String>> entry : fieldMaps.entrySet()) {
 				setDocPrintParamFields(docparam, entry.getValue());
 			}
 
 			try {
 				LjmDocprintParam docprintsetp = paramRepository.save(docparam);
-				response.put("statusCode", successCode);
-				response.put("message", "User created successfully");
+				response.put(statusCode, successCode);
+				response.put(messageCode, "Document parameter created successfully");
 				data.put("Id", docprintsetp.getDPP_SYSID());
 				response.put("data", data);
 			} catch (Exception e) {
-				response.put("statusCode",errorCode);
-				response.put("message", "An error occurred: " + e.getMessage());
+				response.put(statusCode, errorCode);
+				response.put(messageCode, "An error occurred: " + e.getMessage());
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -90,38 +94,38 @@ public class LjmDocPrintParamServiceImpl implements LjmDocPrintParamService {
 	public String updateDocparam(DocPrintParamDto param, Long dPP_SYSID) {
 		JSONObject response = new JSONObject();
 
-		 try {
-			 Long dppid = dPP_SYSID;
-		        Optional<LjmDocprintParam> optionaldocprint = paramRepository.findById(dppid);
-		        
-		        if (optionaldocprint.isPresent()) {
-		        	LjmDocprintParam docprintparam = optionaldocprint.get();
+		try {
+			Long dppid = dPP_SYSID;
+			Optional<LjmDocprintParam> optionaldocprint = paramRepository.findById(dppid);
 
-		            // Assuming `getFrontForm()` returns an object with a method `getFormFields()`
-		            // which returns a Map<String, String>
-		            Map<String, Map<String, String>> fieldMaps = new HashMap<>();
-		            fieldMaps.put("frontForm", param.getDocPrintParam().getFormFields());
+			if (optionaldocprint.isPresent()) {
+				LjmDocprintParam docprintparam = optionaldocprint.get();
 
-		            for (Map.Entry<String, Map<String, String>> entry : fieldMaps.entrySet()) {
-		            	setDocPrintParamFields(docprintparam, entry.getValue());
-		            }
+				// Assuming `getFrontForm()` returns an object with a method `getFormFields()`
+				// which returns a Map<String, String>
+				Map<String, Map<String, String>> fieldMaps = new HashMap<>();
+				fieldMaps.put("frontForm", param.getDocPrintParam().getFormFields());
 
-		            paramRepository.save(docprintparam);
-		            response.put(statusCode, successCode);
-		            response.put(messageCode, "Docprint Details Updated Successfully");
-		        } else {
-		            response.put(statusCode, errorCode);
-		            response.put(messageCode, "Docprint with the provided ID not found");
-		        }
-		    } catch (Exception e) {
-		        e.printStackTrace();
-		        response.put(statusCode, errorCode);
-		        response.put(messageCode, "An error occurred: " + e.getMessage());
-		    }
+				for (Map.Entry<String, Map<String, String>> entry : fieldMaps.entrySet()) {
+					setDocPrintParamFields(docprintparam, entry.getValue());
+				}
 
-		    return response.toString();
+				paramRepository.save(docprintparam);
+				response.put(statusCode, successCode);
+				response.put(messageCode, "Docprint Details Updated Successfully");
+			} else {
+				response.put(statusCode, errorCode);
+				response.put(messageCode, "Docprint with the provided ID not found");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.put(statusCode, errorCode);
+			response.put(messageCode, "An error occurred: " + e.getMessage());
 		}
-	
+
+		return response.toString();
+	}
+
 	private void setDocPrintParamFields(LjmDocprintParam docparam, Map<String, String> fields) throws Exception {
 		for (Map.Entry<String, String> entry : fields.entrySet()) {
 			setDocPrintParamField(docparam, entry.getKey(), entry.getValue());
@@ -224,7 +228,8 @@ public class LjmDocPrintParamServiceImpl implements LjmDocPrintParamService {
 				}
 			}
 		}
-		return inputObject.toString();}
+		return inputObject.toString();
+	}
 
 	@Override
 	public String deleteDocparamByID(Long dppSysid) {
@@ -235,23 +240,22 @@ public class LjmDocPrintParamServiceImpl implements LjmDocPrintParamService {
 				paramRepository.deleteById(dppSysid);
 
 				JSONObject response = new JSONObject();
-				response.put("Status", successCode);
-				response.put("Message", "Record with ID " + dppSysid + " deleted successfully");
+				response.put(statusCode, successCode);
+				response.put(messageCode, "Record with ID " + dppSysid + " deleted successfully");
 				return response.toString();
 
 			} else {
 				JSONObject response = new JSONObject();
-				response.put("Status", errorCode);
-				response.put("Message", "Record with ID " + dppSysid + " not found");
+				response.put(statusCode, errorCode);
+				response.put(messageCode, "Record with ID " + dppSysid + " not found");
 				return response.toString();
 			}
 		} catch (Exception e) {
 			JSONObject response = new JSONObject();
-			response.put("Status", errorCode);
-			response.put("Message", "Error deleting record with ID " + dppSysid + ": " + e.getMessage());
+			response.put(statusCode, errorCode);
+			response.put(messageCode, "Error deleting record with ID " + dppSysid + ": " + e.getMessage());
 			return response.toString();
 		}
 	}
 
-	
 }

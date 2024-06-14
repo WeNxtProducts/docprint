@@ -13,6 +13,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
@@ -21,10 +22,11 @@ import jakarta.persistence.TemporalType;
 @Table(name = "LJM_DOCPRINT_SETUP", schema = "LIFE_DEV")
 public class LjmDocprintSetup {
 
-	
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	@Column(name = "DPS_SYSID", nullable = false)
+
+	@SequenceGenerator(name = "SETUP", sequenceName = "DPS_SYSID_SEQ", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "SETUP")
+	@Column(name = "DPS_SYSID")
 	@JsonProperty
 	private Long DPS_SYSID;
 
@@ -80,8 +82,6 @@ public class LjmDocprintSetup {
 
 	@Column(name = "QPM_MOD_ID")
 	private String QPM_MOD_ID;
-
-	
 
 	public Long getDPS_SYSID() {
 		return DPS_SYSID;
@@ -227,6 +227,4 @@ public class LjmDocprintSetup {
 		QPM_MOD_ID = qPM_MOD_ID;
 	}
 
-	
-	
 }

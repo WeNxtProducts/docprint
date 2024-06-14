@@ -23,9 +23,9 @@ public class LjmDocPrintParamController {
 	@Autowired
 	private LjmDocPrintParamService paramservice;
 
-	@PostMapping("/create")
-	public String createDocparam(@RequestBody DocPrintParamDto param) {
-		return paramservice.createDocparam(param);
+	@PostMapping("/create/{DPP_SYSID}")
+	public String createDocparam(@RequestBody DocPrintParamDto param,@PathVariable Long DPP_SYSID) {
+		return paramservice.createDocparam(param,DPP_SYSID);
 	}
 	@PostMapping("/updateDocparam/{DPP_SYSID}")
 	public String updateDocparam(@RequestBody DocPrintParamDto param, @PathVariable Long DPP_SYSID) {
