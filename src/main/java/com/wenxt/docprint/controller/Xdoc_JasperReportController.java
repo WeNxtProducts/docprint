@@ -8,11 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wenxt.docprint.service.Xdoc_JasperReportService;
@@ -39,32 +37,24 @@ public class Xdoc_JasperReportController {
 		return jsonResponse;
 	}
 
-//	@PostMapping("/generateJasper")
-//	public String generateJasperReport(@RequestParam Long dpsSysid, HttpServletRequest request) throws JRException {
-//		return reportService.generateJasperReport(dpsSysid, request);
-//
-//	}
-//	
-	
-	  @PostMapping("/generateJasper")
-	    public String generateJasperReport(@RequestBody Map<String, String> requestBody,
-	                                       HttpServletRequest request) throws JRException {
-	        String dpsSysidStr = requestBody.get("dpsSysid");
+	@PostMapping("/generateJasper")
+	public String generateJasperReport(@RequestBody Map<String, String> requestBody, HttpServletRequest request)
+			throws JRException {
+		String dpsSysidStr = requestBody.get("dpsSysid");
 
-	        if (dpsSysidStr == null) {
-	            throw new IllegalArgumentException("dpsSysid must be provided in the request body");
-	        }
+		if (dpsSysidStr == null) {
+			throw new IllegalArgumentException("dpsSysid must be provided in the request body");
+		}
 
-	        Long dpsSysid;
-	        try {
-	            dpsSysid = Long.parseLong(dpsSysidStr);
-	        } catch (NumberFormatException e) {
-	            throw new IllegalArgumentException("Invalid dpsSysid format. It must be a valid Long.");
-	        }
+		Long dpsSysid;
+		try {
+			dpsSysid = Long.parseLong(dpsSysidStr);
+		} catch (NumberFormatException e) {
+			throw new IllegalArgumentException("Invalid dpsSysid format. It must be a valid Long.");
+		}
 
-	        return reportService.generateJasperReport(dpsSysid, request);
-	    }
-	
+		return reportService.generateJasperReport(dpsSysid, request);
+	}
 
 	@PostMapping("/generateXdoc")
 	public ResponseEntity<?> generateXdocReport(@RequestBody Map<String, String> request)
