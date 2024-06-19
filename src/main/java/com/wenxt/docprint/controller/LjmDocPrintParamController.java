@@ -18,23 +18,20 @@ import com.wenxt.docprint.service.LjmDocPrintParamService;
 @RestController
 @RequestMapping("/docparam")
 public class LjmDocPrintParamController {
-	
-	
+
 	@Autowired
 	private LjmDocPrintParamService paramservice;
 
 	@PostMapping("/create/{DPP_SYSID}")
-	public String createDocparam(@RequestBody DocPrintParamDto param,@PathVariable Long DPP_SYSID) {
-		return paramservice.createDocparam(param,DPP_SYSID);
+	public String createDocparam(@RequestBody DocPrintParamDto param, @PathVariable Long DPP_SYSID) {
+		return paramservice.createDocparam(param, DPP_SYSID);
 	}
+
 	@PostMapping("/updateDocparam/{DPP_SYSID}")
 	public String updateDocparam(@RequestBody DocPrintParamDto param, @PathVariable Long DPP_SYSID) {
 		return paramservice.updateDocparam(param, DPP_SYSID);
 	}
-	
 
-	
-	
 	@PostMapping("getdocparambyid")
 	public String getDocparamByID(@RequestParam Long dppSysid) {
 		try {
