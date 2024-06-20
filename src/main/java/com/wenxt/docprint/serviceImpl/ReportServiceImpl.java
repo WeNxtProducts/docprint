@@ -92,7 +92,7 @@ public class ReportServiceImpl implements ReportService {
 	private JdbcTemplate jdbcTemplate;
 
 	@Override
-	public String generatedocument(HttpServletRequest request) {
+	public String generatedocument(HttpServletRequest request) throws JRException {
 		try {
 			ObjectMapper mapper = new ObjectMapper();
 			Map<String, Object> inputMap = mapper.readValue(request.getInputStream(), Map.class);
@@ -144,9 +144,10 @@ public class ReportServiceImpl implements ReportService {
 				dataMap.putAll(docParms);
 			}
 
-			String basePath = "C:/Wenxt_Base_Project/docprint/src/main/resources/";
-			
-			
+//			String basePath = "C:/Wenxt_Base_Project/docprint/src/main/resources/";
+
+			String basePath = "D:/WeNxt Product/docprint/src/main/resources/";
+
 			JSONObject response = new JSONObject();
 			JSONObject data = new JSONObject();
 
@@ -185,29 +186,71 @@ public class ReportServiceImpl implements ReportService {
 					throw new RuntimeException("Error reading PDF file: " + pdfOutputFileName, e);
 				}
 
-				response.put("statusCode", "success");
-				response.put("message", "Xdoc report generated successfully");
-				data.put("attachment", pdfBytes);
-				response.put("data", data);
+				response.put(statusCode, successCode);
+				response.put(messageCode, "Xdoc report generated successfully");
+				data.put(attachmentCode, pdfBytes);
+				response.put(dataCode, data);
 
 			} else if ("Static".equalsIgnoreCase(reportType)) {
 				// Generate static report
 				Optional<String> fileLocation = getFileLocationByTemplateName(docTemplateName);
 
 				if (!fileLocation.isPresent()) {
-					return new JSONObject().put("statusCode", "error")
-							.put("message", "Template not found for name: " + docTemplateName).toString();
+					return new JSONObject().put(statusCode, errorCode)
+							.put(messageCode, "Template not found for name: " + docTemplateName).toString();
 				}
 
 				byte[] pdfBytes = readPdfFile(fileLocation.get());
 
-				response.put("statusCode", "success");
-				response.put("message", "Static report generated successfully");
+				response.put(statusCode, successCode);
+				response.put(messageCode, "Static report generated successfully");
 
-				data.put("attachment", pdfBytes);
-				response.put("data", data);
+				data.put(attachmentCode, pdfBytes);
+				response.put(dataCode, data);
+			}
+//			} else if ("JASPER".equalsIgnoreCase(reportType)) {
+//				// Generate Jasper report
+//				String location = setup.getDPS_TEMP_LOC();
+//				String pdfOutputPath = basePath + "templates/output" + formattedDate + ".pdf";
+//				String xlsxOutputPath = basePath + "templates/output" + formattedDate + ".xlsx";
+//
+//				File jrxmlFile = new File(location);
+//				if (!jrxmlFile.exists()) {
+//					throw new RuntimeException("JRXML file not found at location: " + location);
+//				}
+//
+//				JasperReport jasperReport;
+//				try {
+//					jasperReport = JasperCompileManager.compileReport(location);
+//				} catch (JRException e) {
+//					throw new RuntimeException("Failed to compile JRXML file at location: " + location, e);
+//				}
+//
+//				Map<String, Object> parameters = new HashMap<>(dataMap);
+//				JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(
+//						Collections.singletonList(parameters));
+//				JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
+//
+//				// Export to PDF
+//				try {
+//					JasperExportManager.exportReportToPdfFile(jasperPrint, pdfOutputPath);
+//				} catch (JRException e) {
+//					throw new RuntimeException("Failed to export report to PDF", e);
+//				}
+//
+//				// Export to XLSX
+//				try {
+//					JRXlsxExporter xlsxExporter = new JRXlsxExporter();
+//					xlsxExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+//					xlsxExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(xlsxOutputPath));
+//					SimpleXlsxReportConfiguration xlsxReportConfiguration = new SimpleXlsxReportConfiguration();
+//					xlsxReportConfiguration.setOnePagePerSheet(false);
+//					xlsxReportConfiguration.setDetectCellType(true);
+//					xlsxExporter.setConfiguration(xlsxReportConfiguration);
+//					xlsxExporter.exportReport();
+//				} 
 
-			} else if ("JASPER".equalsIgnoreCase(reportType)) {
+			else if ("JASPER".equalsIgnoreCase(reportType)) {
 				// Generate Jasper report
 				String location = setup.getDPS_TEMP_LOC();
 				String pdfOutputPath = basePath + "templates/output" + formattedDate + ".pdf";
@@ -225,7 +268,10 @@ public class ReportServiceImpl implements ReportService {
 					throw new RuntimeException("Failed to compile JRXML file at location: " + location, e);
 				}
 
+				// Set parameters, including watermark image
 				Map<String, Object> parameters = new HashMap<>(dataMap);
+				parameters.put("WATERMARK_IMAGE", "path/to/watermark/image.png");
+
 				JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(
 						Collections.singletonList(parameters));
 				JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
@@ -237,19 +283,12 @@ public class ReportServiceImpl implements ReportService {
 					throw new RuntimeException("Failed to export report to PDF", e);
 				}
 
-				// Export to XLSX
-				try {
-					JRXlsxExporter xlsxExporter = new JRXlsxExporter();
-					xlsxExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-					xlsxExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(xlsxOutputPath));
-					SimpleXlsxReportConfiguration xlsxReportConfiguration = new SimpleXlsxReportConfiguration();
-					xlsxReportConfiguration.setOnePagePerSheet(false);
-					xlsxReportConfiguration.setDetectCellType(true);
-					xlsxExporter.setConfiguration(xlsxReportConfiguration);
-					xlsxExporter.exportReport();
-				} catch (JRException e) {
-					throw new RuntimeException("Failed to export report to XLSX", e);
-				}
+				JRXlsxExporter xlsxExporter = new JRXlsxExporter();
+				xlsxExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
+				xlsxExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(xlsxOutputPath));
+				SimpleXlsxReportConfiguration xlsxReportConfiguration = new SimpleXlsxReportConfiguration();
+				xlsxReportConfiguration.setOnePagePerSheet(false);
+				xlsxReportConfiguration.setDetectCellType(true);
 
 				// Read PDF and XLSX files into byte arrays
 				byte[] pdfBytes;
@@ -276,16 +315,16 @@ public class ReportServiceImpl implements ReportService {
 				String username = getUsernameFromSecurityContext();
 
 				if (".pdf".equalsIgnoreCase(genType)) {
-					response.put("statusCode", "success");
-					response.put("message", "Jasper report PDF generated successfully");
-					data.put("attachment", pdfBytes);
-					response.put("data", data);
+					response.put(statusCode, successCode);
+					response.put(messageCode, "Jasper report PDF generated successfully");
+					data.put(attachmentCode, pdfBytes);
+					response.put(dataCode, data);
 
 				} else {
-					response.put("statusCode", "success");
-					response.put("message", "Jasper report XLSX generated successfully");
-					data.put("attachment", pdfBytes);
-					response.put("data", data);
+					response.put(statusCode, errorCode);
+					response.put(messageCode, "Jasper report XLSX generated successfully");
+					data.put(attachmentCode, pdfBytes);
+					response.put(dataCode, data);
 				}
 
 			} else {
@@ -326,9 +365,9 @@ public class ReportServiceImpl implements ReportService {
 		pdfDocument.open();
 
 		// Register font directory dynamically
-		String fontDirectory = "C:/Wenxt_Base_Project/docprint/src/main/resources";
+//		String fontDirectory = "C:/Wenxt_Base_Project/docprint/src/main/resources";
 
-//		String fontDirectory = "D:\\WeNxt Product\\docprint\\src\\main\\resources";
+		String fontDirectory = "D:/WeNxt Product/docprint/src/main/resources";
 		BaseFont bf = BaseFont.createFont(fontDirectory + "/NotoSansEthiopic.ttf", BaseFont.IDENTITY_H,
 				BaseFont.EMBEDDED);
 		com.itextpdf.text.Font font = new com.itextpdf.text.Font(bf, 12);
