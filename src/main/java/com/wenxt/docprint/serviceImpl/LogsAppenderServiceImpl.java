@@ -32,6 +32,7 @@ public class LogsAppenderServiceImpl implements LogsAppender {
 		String hostname = request.getRemoteHost();
 		MDC.put("DPH_USER", username);
 		MDC.put("DESTINATION", name);
+
 		MDC.put("DPH_HOST_NAME", hostname);
 		MDC.put("DPH_IP_ADDR", ipAddress);
 		ljmLogger.info(message);
@@ -45,6 +46,30 @@ public class LogsAppenderServiceImpl implements LogsAppender {
 		} else {
 			return principal.toString();
 		}
+	}
+
+	public void logToError(String message, HttpServletRequest request, Exception e) {
+		Logger rootLogger = Logger.getRootLogger();
+		Logger ljmLoggers = Logger.getLogger("com.wenxt.docprint.serviceImpl.LogsAppenderServiceImpl");
+
+		PropertyConfigurator.configure("src/main/resources/application.properties");
+		JDBCAppender ljmLogsAppender = (JDBCAppender) Logger
+				.getLogger("com.wenxt.docprint.serviceImpl.LogsAppenderServiceImpl").getAppender("DOC_PRINT_HISTORY");
+		if (ljmLogsAppender == null) {
+			ljmLoggers.addAppender(rootLogger.getAppender("DOC_PRINT_HISTORY"));
+		}
+
+		String ipAddress = request.getRemoteAddr();
+//    String username = request.getUserPrincipal().getName(); // Assuming the username can be retrieved this way
+		String username = getUsernameFromSecurityContext();
+		String hostname = request.getRemoteHost();
+		MDC.put("DPH_USER", username);
+		MDC.put("DPH_LOG_TYPE", e);
+		MDC.put("DPH_HOST_NAME", hostname);
+		MDC.put("DPH_IP_ADDR", ipAddress);
+		ljmLoggers.info(message);
+		MDC.clear();
+
 	}
 
 }

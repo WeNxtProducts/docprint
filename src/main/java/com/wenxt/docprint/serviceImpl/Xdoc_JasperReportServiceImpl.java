@@ -350,9 +350,9 @@ public class Xdoc_JasperReportServiceImpl implements Xdoc_JasperReportService {
 			context.put("Head", dataMap);
 
 			// Define the output file paths
-//			String basePath = "D:/Kamali/DocPrint/DOC_PRINT/DOC_PRINT/src/main/resources/xdoc/";
+			String basePath = "D:/Kamali/DocPrint/DOC_PRINT/DOC_PRINT/src/main/resources/xdoc/";
 
-			String basePath = "D:/WeNxt Product/docprint/src/main/resources/xdoc/";
+//			String basePath = "D:/WeNxt Product/docprint/src/main/resources/xdoc/";
 			String docxOutputFileName = basePath + "XDOC_output_" + formattedDate + ".docx";
 			String pdfOutputFileName = basePath + "XDOC_output_" + formattedDate + ".pdf";
 
@@ -410,9 +410,9 @@ public class Xdoc_JasperReportServiceImpl implements Xdoc_JasperReportService {
 		pdfDocument.open();
 
 		// Register font directory dynamically
-//		String fontDirectory = "C:/Wenxt_Base_Project/docprint/src/main/resources";
+		String fontDirectory = "C:/Wenxt_Base_Project/docprint/src/main/resources";
 
-		String fontDirectory = "D:\\WeNxt Product\\docprint\\src\\main\\resources";
+//		String fontDirectory = "D:/WeNxt Product/docprint/src/main/resources";
 		BaseFont bf = BaseFont.createFont(fontDirectory + "/NotoSansEthiopic.ttf", BaseFont.IDENTITY_H,
 				BaseFont.EMBEDDED);
 		com.itextpdf.text.Font font = new com.itextpdf.text.Font(bf, 12);

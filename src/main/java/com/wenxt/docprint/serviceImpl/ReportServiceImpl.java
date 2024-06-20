@@ -93,9 +93,7 @@ public class ReportServiceImpl implements ReportService {
 
 	@Override
 	public String generatedocument(HttpServletRequest request) {
-
 		try {
-
 			ObjectMapper mapper = new ObjectMapper();
 			Map<String, Object> inputMap = mapper.readValue(request.getInputStream(), Map.class);
 
@@ -107,9 +105,9 @@ public class ReportServiceImpl implements ReportService {
 			String sqlQuery = "SELECT dps_sysid FROM ljm_docprint_setup WHERE dps_template_name = ?";
 			Long dpsSysid = jdbcTemplate.queryForObject(sqlQuery, Long.class, docTemplateName);
 
-			Date currentdate = new Date();
+			Date currentDate = new Date();
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
-			String formattedDate = dateFormat.format(currentdate);
+			String formattedDate = dateFormat.format(currentDate);
 
 			Optional<LjmDocprintSetup> setupOptional = lrmdocrprintRepository.findById(dpsSysid);
 			if (!setupOptional.isPresent()) {
@@ -146,13 +144,13 @@ public class ReportServiceImpl implements ReportService {
 				dataMap.putAll(docParms);
 			}
 
-			String basePath = "D:/WeNxt Product/docprint/src/main/resources/";
+			String basePath = "C:/Wenxt_Base_Project/docprint/src/main/resources/";
+			
+			
 			JSONObject response = new JSONObject();
 			JSONObject data = new JSONObject();
 
-			if ("XDOC".equalsIgnoreCase(reportType.trim())) {
-
-				System.out.println(reportType);
+			if ("XDOC".equalsIgnoreCase(reportType)) {
 				// Generate XDOC report
 				IXDocReport xdocReport = XDocReportRegistry.getRegistry().loadReport(getTemplatePath(dpsSysid),
 						TemplateEngineKind.Velocity);
@@ -168,7 +166,7 @@ public class ReportServiceImpl implements ReportService {
 				try (FileOutputStream outputStream = new FileOutputStream(docxOutputFileName)) {
 					xdocReport.process(context, outputStream);
 				} catch (IOException e) {
-					throw new IOException("Error writing DOCX report: " + docxOutputFileName, e);
+					throw new RuntimeException("Error writing DOCX report: " + docxOutputFileName, e);
 				}
 
 				// Convert DOCX to PDF using iTextPDF
@@ -176,7 +174,7 @@ public class ReportServiceImpl implements ReportService {
 						FileOutputStream pdfOutputStream = new FileOutputStream(pdfOutputFileName)) {
 					convertToPdf(docxInputStream, pdfOutputStream);
 				} catch (Exception e) {
-					throw new IOException("Error converting DOCX to PDF: " + pdfOutputFileName, e);
+					throw new RuntimeException("Error converting DOCX to PDF: " + pdfOutputFileName, e);
 				}
 
 				// Read PDF bytes
@@ -184,38 +182,32 @@ public class ReportServiceImpl implements ReportService {
 				try (InputStream pdfInputStream = new FileInputStream(pdfOutputFileName)) {
 					pdfBytes = IOUtils.toByteArray(pdfInputStream);
 				} catch (IOException e) {
-					throw new IOException("Error reading PDF file: " + pdfOutputFileName, e);
+					throw new RuntimeException("Error reading PDF file: " + pdfOutputFileName, e);
 				}
 
-				response.put(statusCode, successCode);
-				response.put(messageCode, "Xdoc report generated successfully");
+				response.put("statusCode", "success");
+				response.put("message", "Xdoc report generated successfully");
+				data.put("attachment", pdfBytes);
+				response.put("data", data);
 
-				data.put(attachmentCode, pdfBytes);
-				response.put(dataCode, data);
-
-			}
-
-			else if ("Static".equalsIgnoreCase(reportType)) {
-
+			} else if ("Static".equalsIgnoreCase(reportType)) {
+				// Generate static report
 				Optional<String> fileLocation = getFileLocationByTemplateName(docTemplateName);
 
 				if (!fileLocation.isPresent()) {
-					return new JSONObject().put("statusCode", "errorCode")
+					return new JSONObject().put("statusCode", "error")
 							.put("message", "Template not found for name: " + docTemplateName).toString();
 				}
 
 				byte[] pdfBytes = readPdfFile(fileLocation.get());
-				String pdfOutputFileName = fileLocation.get();
 
-				response.put(statusCode, successCode);
-				response.put(messageCode, "Static report generated successfully");
+				response.put("statusCode", "success");
+				response.put("message", "Static report generated successfully");
 
-				data.put(attachmentCode, pdfBytes);
-				response.put(dataCode, data);
+				data.put("attachment", pdfBytes);
+				response.put("data", data);
 
-			}
-
-			else if ("JASPER".equalsIgnoreCase(reportType)) {
+			} else if ("JASPER".equalsIgnoreCase(reportType)) {
 				// Generate Jasper report
 				String location = setup.getDPS_TEMP_LOC();
 				String pdfOutputPath = basePath + "templates/output" + formattedDate + ".pdf";
@@ -261,7 +253,6 @@ public class ReportServiceImpl implements ReportService {
 
 				// Read PDF and XLSX files into byte arrays
 				byte[] pdfBytes;
-				byte[] xlsxBytes;
 				try (FileInputStream pdfInputStream = new FileInputStream(pdfOutputPath);
 						FileInputStream xlsxInputStream = new FileInputStream(xlsxOutputPath);
 						ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream();
@@ -279,34 +270,39 @@ public class ReportServiceImpl implements ReportService {
 					while ((xlsxByte = xlsxInputStream.read()) != -1) {
 						xlsxOutputStream.write(xlsxByte);
 					}
-					xlsxBytes = xlsxOutputStream.toByteArray();
+					// xlsxBytes = xlsxOutputStream.toByteArray();
 				}
 
 				String username = getUsernameFromSecurityContext();
-				logservice.logToLJMLogs1("Generated Jasper report", request, setup.getDPS_TEMPLATE_NAME());
 
 				if (".pdf".equalsIgnoreCase(genType)) {
-					response.put(statusCode, successCode);
-					response.put(messageCode, "Jasper report PDF generated successfully");
-					data.put(attachmentCode, pdfBytes);
-					response.put(dataCode, data);
+					response.put("statusCode", "success");
+					response.put("message", "Jasper report PDF generated successfully");
+					data.put("attachment", pdfBytes);
+					response.put("data", data);
 
 				} else {
-					response.put(statusCode, successCode);
-					response.put(messageCode, "Jasper report XLSX generated successfully");
-					data.put(attachmentCode, pdfBytes);
-					response.put(dataCode, data);
+					response.put("statusCode", "success");
+					response.put("message", "Jasper report XLSX generated successfully");
+					data.put("attachment", pdfBytes);
+					response.put("data", data);
 				}
 
 			} else {
 				throw new RuntimeException("Unsupported report type: " + reportType);
 			}
 
+			logservice.logToLJMLogs1("Generated Jasper report", request, setup.getDPS_TEMPLATE_NAME());
+
 			return response.toString();
 
 		} catch (Exception e) {
-			e.printStackTrace(); // Log the exception properly
-			throw new RuntimeException("Failed to generate report: " + e.getMessage(), e);
+			logservice.logToError("Generated Jasper report", request, e);
+			JSONObject errorResponse = new JSONObject();
+			errorResponse.put(statusCode, errorCode);
+			errorResponse.put(messageCode, "Failed to generate report");
+			errorResponse.put("error", e.getMessage());
+			return errorResponse.toString();
 		}
 	}
 
@@ -330,9 +326,9 @@ public class ReportServiceImpl implements ReportService {
 		pdfDocument.open();
 
 		// Register font directory dynamically
-//		String fontDirectory = "C:/Wenxt_Base_Project/docprint/src/main/resources";
+		String fontDirectory = "C:/Wenxt_Base_Project/docprint/src/main/resources";
 
-		String fontDirectory = "D:\\WeNxt Product\\docprint\\src\\main\\resources";
+//		String fontDirectory = "D:\\WeNxt Product\\docprint\\src\\main\\resources";
 		BaseFont bf = BaseFont.createFont(fontDirectory + "/NotoSansEthiopic.ttf", BaseFont.IDENTITY_H,
 				BaseFont.EMBEDDED);
 		com.itextpdf.text.Font font = new com.itextpdf.text.Font(bf, 12);
