@@ -25,22 +25,22 @@ import jakarta.persistence.Column;
 
 @Service
 public class ReportBuilderServiceImpl implements ReportBuilderService {
-	
+
 	@Value("${spring.message.code}")
 	private String messageCode;
- 
+
 	@Value("${spring.status.code}")
 	private String statusCode;
- 
+
 	@Value("${spring.data.code}")
 	private String dataCode;
- 
+
 	@Value("${spring.success.code}")
 	private String successCode;
- 
+
 	@Value("${spring.error.code}")
 	private String errorCode;
-	
+
 	@Autowired
 	private ReportBuilderRepo reportBuilderRepo;
 
@@ -58,11 +58,11 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 				setreportBuilderFields(template, entry.getValue());
 			}
 
-				LjmReportBuilder savedTemplate = reportBuilderRepo.save(template);
-				response.put(statusCode, successCode);
-				response.put(messageCode, "Report Builder Details Created Successfully");
-				data.put("Id", savedTemplate.getRB_SYS_ID());
-				response.put("data", data);
+			LjmReportBuilder savedTemplate = reportBuilderRepo.save(template);
+			response.put(statusCode, successCode);
+			response.put(messageCode, "Report Builder Details Created Successfully");
+			data.put("Id", savedTemplate.getRB_SYS_ID());
+			response.put("data", data);
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.put("statusCode", errorCode);
@@ -72,7 +72,7 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 		return response.toString();
 	}
 
-	private void setreportBuilderFields(LjmReportBuilder template, Map<String, String> value) throws Exception{
+	private void setreportBuilderFields(LjmReportBuilder template, Map<String, String> value) throws Exception {
 		for (Map.Entry<String, String> entry : value.entrySet()) {
 			setReportBuilderField(template, entry.getKey(), entry.getValue());
 		}
@@ -184,7 +184,7 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 	}
 
 	@Override
-	public String getReportBuilder(Integer rbSysId) throws Exception{
+	public String getReportBuilder(Integer rbSysId) throws Exception {
 		Map<String, Object> parametermap = new HashMap<String, Object>();
 		JSONObject inputObject = new JSONObject();
 		Optional<LjmReportBuilder> optionalUser = reportBuilderRepo.findById(rbSysId);

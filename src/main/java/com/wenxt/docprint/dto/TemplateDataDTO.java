@@ -1,15 +1,13 @@
 package com.wenxt.docprint.dto;
 
-
-
 public class TemplateDataDTO {
-    private Long DPS_SYSID;
-    private String DPS_TEMP_LOC;
+	private Long DPS_SYSID;
+	private String DPS_TEMP_LOC;
 
-    public TemplateDataDTO(Long dpsSysid, String dpsTempLoc) {
-        this.DPS_SYSID = dpsSysid;
-        this.DPS_TEMP_LOC = dpsTempLoc;
-    }
+	public TemplateDataDTO(Long dpsSysid, String dpsTempLoc) {
+		this.DPS_SYSID = dpsSysid;
+		this.DPS_TEMP_LOC = dpsTempLoc;
+	}
 
 	public Long getDPS_SYSID() {
 		return DPS_SYSID;
@@ -27,6 +25,4 @@ public class TemplateDataDTO {
 		DPS_TEMP_LOC = dPS_TEMP_LOC;
 	}
 
-   
 }
-

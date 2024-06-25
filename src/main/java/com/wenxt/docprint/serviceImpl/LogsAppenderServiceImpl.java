@@ -27,7 +27,6 @@ public class LogsAppenderServiceImpl implements LogsAppender {
 		}
 
 		String ipAddress = request.getRemoteAddr();
-//    String username = request.getUserPrincipal().getName(); // Assuming the username can be retrieved this way
 		String username = getUsernameFromSecurityContext();
 		String hostname = request.getRemoteHost();
 		MDC.put("DPH_USER", username);
@@ -60,7 +59,6 @@ public class LogsAppenderServiceImpl implements LogsAppender {
 		}
 
 		String ipAddress = request.getRemoteAddr();
-//    String username = request.getUserPrincipal().getName(); // Assuming the username can be retrieved this way
 		String username = getUsernameFromSecurityContext();
 		String hostname = request.getRemoteHost();
 		MDC.put("DPH_USER", username);

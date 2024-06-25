@@ -1,9 +1,6 @@
 package com.wenxt.docprint.service;
 
 import com.wenxt.docprint.dto.DocPrintSetupDto;
-import com.wenxt.docprint.model.LjmDocprintSetup;
-
-import jakarta.servlet.http.HttpServletRequest;
 
 public interface LjmDocPrintSetupService {
 

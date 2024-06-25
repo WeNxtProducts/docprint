@@ -16,7 +16,7 @@ public class LjmDocprintParam {
 
 	@Id
 	@SequenceGenerator(name = "PARAM", sequenceName = "DPP_SYSID_SEQ", allocationSize = 1)
-    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "PARAM")
+	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "PARAM")
 	@Column(name = "DPP_SYSID", nullable = false)
 	private Long DPP_SYSID;
 
@@ -34,35 +34,18 @@ public class LjmDocprintParam {
 	private String DPP_VALUE;
 
 	// Getters and setters
-	
 
-	
 	public Long getDPP_SYSID() {
 		return DPP_SYSID;
 	}
-
-	
-
-	
-
 
 	public LjmDocprintSetup getLjmDocprintSetup() {
 		return LjmDocprintSetup;
 	}
 
-
-
-
-
-
 	public void setLjmDocprintSetup(LjmDocprintSetup ljmDocprintSetup) {
 		LjmDocprintSetup = ljmDocprintSetup;
 	}
-
-
-
-
-
 
 	public void setDPP_SYSID(Long dPP_SYSID) {
 		DPP_SYSID = dPP_SYSID;
@@ -92,5 +75,4 @@ public class LjmDocprintParam {
 		DPP_VALUE = dPP_VALUE;
 	}
 
-	
 }

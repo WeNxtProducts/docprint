@@ -205,47 +205,6 @@ public class ReportServiceImpl implements ReportService {
 				data.put(attachmentCode, pdfBytes);
 				response.put(dataCode, data);
 			}
-//			} else if ("JASPER".equalsIgnoreCase(reportType)) {
-//				// Generate Jasper report
-//				String location = setup.getDPS_TEMP_LOC();
-//				String pdfOutputPath = basePath + "templates/output" + formattedDate + ".pdf";
-//				String xlsxOutputPath = basePath + "templates/output" + formattedDate + ".xlsx";
-//
-//				File jrxmlFile = new File(location);
-//				if (!jrxmlFile.exists()) {
-//					throw new RuntimeException("JRXML file not found at location: " + location);
-//				}
-//
-//				JasperReport jasperReport;
-//				try {
-//					jasperReport = JasperCompileManager.compileReport(location);
-//				} catch (JRException e) {
-//					throw new RuntimeException("Failed to compile JRXML file at location: " + location, e);
-//				}
-//
-//				Map<String, Object> parameters = new HashMap<>(dataMap);
-//				JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(
-//						Collections.singletonList(parameters));
-//				JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
-//
-//				// Export to PDF
-//				try {
-//					JasperExportManager.exportReportToPdfFile(jasperPrint, pdfOutputPath);
-//				} catch (JRException e) {
-//					throw new RuntimeException("Failed to export report to PDF", e);
-//				}
-//
-//				// Export to XLSX
-//				try {
-//					JRXlsxExporter xlsxExporter = new JRXlsxExporter();
-//					xlsxExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
-//					xlsxExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(xlsxOutputPath));
-//					SimpleXlsxReportConfiguration xlsxReportConfiguration = new SimpleXlsxReportConfiguration();
-//					xlsxReportConfiguration.setOnePagePerSheet(false);
-//					xlsxReportConfiguration.setDetectCellType(true);
-//					xlsxExporter.setConfiguration(xlsxReportConfiguration);
-//					xlsxExporter.exportReport();
-//				} 
 
 			else if ("JASPER".equalsIgnoreCase(reportType)) {
 				// Generate Jasper report
@@ -333,7 +292,7 @@ public class ReportServiceImpl implements ReportService {
 			return response.toString();
 
 		} catch (Exception e) {
-			logservice.logToError("Generated Jasper report", request, e);
+			logservice.logToError("Generated report", request, e);
 			JSONObject errorResponse = new JSONObject();
 			errorResponse.put(statusCode, errorCode);
 			errorResponse.put(messageCode, "Failed to generate report");

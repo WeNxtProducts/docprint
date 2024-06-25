@@ -61,15 +61,13 @@ public class SecurityConfig {
 				.and()
 				.authorizeHttpRequests().requestMatchers("/docprintsetup/**").authenticated() 
 				.and()
-				.authorizeHttpRequests().requestMatchers("/reports/**").authenticated() 
+				.authorizeHttpRequests().requestMatchers("/reportss/**").authenticated() 
 				.and()
 				.authorizeHttpRequests().requestMatchers("/docparam/**").authenticated() 
 				.and()
 				.authorizeHttpRequests().requestMatchers("/reportBuilder/**").authenticated() 
 				.and()
 				.authorizeHttpRequests().requestMatchers("/report/**").authenticated() 
-//				.and()
-//				.authorizeHttpRequests().requestMatchers("/docprint/**").authenticated() 
 				.and()
 				.sessionManagement() 
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS) 
@@ -78,13 +76,6 @@ public class SecurityConfig {
 				.addFilterBefore(authFilter, UsernamePasswordAuthenticationFilter.class) 
 				.build(); 
 	} 
-
-	// Password Encoding 
-//    @Bean
-//    public PasswordEncoder passwordEncoder() {
-//        return NoOpPasswordEncoder.getInstance(); // Jasypt handles encryption and decryption
-//    }
-
     @Bean
     public AuthenticationProvider authenticationProvider() {
         CustomAuthenticationProvider authenticationProvider = new CustomAuthenticationProvider(userDetailsService());
