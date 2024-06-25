@@ -20,9 +20,6 @@ import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -314,15 +311,15 @@ public class ReportServiceImpl implements ReportService {
 
 				String username = getUsernameFromSecurityContext();
 
-				if (".pdf".equalsIgnoreCase(genType)) {
+				if (".xlsx".equalsIgnoreCase(genType)) {
 					response.put(statusCode, successCode);
-					response.put(messageCode, "Jasper report PDF generated successfully");
+					response.put(messageCode, "Jasper report XLSX generated successfully");
 					data.put(attachmentCode, pdfBytes);
 					response.put(dataCode, data);
 
 				} else {
 					response.put(statusCode, errorCode);
-					response.put(messageCode, "Jasper report XLSX generated successfully");
+					response.put(messageCode, "Jasper report PDF generated successfully");
 					data.put(attachmentCode, pdfBytes);
 					response.put(dataCode, data);
 				}
