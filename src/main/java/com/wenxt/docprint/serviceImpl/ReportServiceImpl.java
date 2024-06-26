@@ -6,17 +6,19 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
 import org.apache.poi.util.IOUtils;
 import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.apache.poi.xwpf.usermodel.XWPFParagraph;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -27,21 +29,27 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.itextpdf.text.Document;
-import com.itextpdf.text.Paragraph;
-import com.itextpdf.text.pdf.BaseFont;
-import com.itextpdf.text.pdf.PdfWriter;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Image;
+import com.lowagie.text.pdf.PdfContentByte;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfStamper;
 import com.wenxt.docprint.model.LjmDocprintParam;
 import com.wenxt.docprint.model.LjmDocprintSetup;
 import com.wenxt.docprint.repo.LjmdocPrinsetup;
 import com.wenxt.docprint.repo.ljmparam;
 import com.wenxt.docprint.service.ReportService;
 
+import fr.opensagres.poi.xwpf.converter.pdf.PdfConverter;
+import fr.opensagres.poi.xwpf.converter.pdf.PdfOptions;
 import fr.opensagres.xdocreport.core.io.internal.ByteArrayOutputStream;
 import fr.opensagres.xdocreport.document.IXDocReport;
+import fr.opensagres.xdocreport.document.images.FileImageProvider;
+import fr.opensagres.xdocreport.document.images.IImageProvider;
 import fr.opensagres.xdocreport.document.registry.XDocReportRegistry;
 import fr.opensagres.xdocreport.template.IContext;
 import fr.opensagres.xdocreport.template.TemplateEngineKind;
+import fr.opensagres.xdocreport.template.formatter.FieldsMetadata;
 import jakarta.servlet.http.HttpServletRequest;
 import net.sf.jasperreports.engine.JRException;
 import net.sf.jasperreports.engine.JasperCompileManager;
@@ -76,6 +84,8 @@ public class ReportServiceImpl implements ReportService {
 	@Value("${spring.data.attachment}")
 	private String attachmentCode;
 
+	@Value("${XdocTempBasePath}")
+	private String XdocTempBasePath;
 	@Autowired
 	private LjmdocPrinsetup lrmdocrprintRepository;
 
@@ -88,6 +98,18 @@ public class ReportServiceImpl implements ReportService {
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
+	@Value("${Staticpath}")
+	private String Staticpath;
+
+	@Value("${XdocBasePath}")
+	private String XdocBasePath;
+
+	@Value("${Jasperpath}")
+	private String Jasperpath;
+
+	@Value("${ImgDocBasePath}")
+	private String ImgDocBasePath;
+
 	@Override
 	public String generatedocument(HttpServletRequest request) throws JRException {
 		try {
@@ -98,12 +120,13 @@ public class ReportServiceImpl implements ReportService {
 			String genType = (String) inputMap.get("genType");
 
 			Map<String, Object> docParms = (Map<String, Object>) inputMap.get("docParms");
+			Map<String, Object> images = (Map<String, Object>) inputMap.get("images");
 
 			String sqlQuery = "SELECT dps_sysid FROM ljm_docprint_setup WHERE dps_template_name = ?";
 			Long dpsSysid = jdbcTemplate.queryForObject(sqlQuery, Long.class, docTemplateName);
 
 			Date currentDate = new Date();
-			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd");
+			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
 			String formattedDate = dateFormat.format(currentDate);
 
 			Optional<LjmDocprintSetup> setupOptional = lrmdocrprintRepository.findById(dpsSysid);
@@ -141,10 +164,6 @@ public class ReportServiceImpl implements ReportService {
 				dataMap.putAll(docParms);
 			}
 
-//			String basePath = "C:/Wenxt_Base_Project/docprint/src/main/resources/";
-
-			String basePath = "D:/WeNxt Product/docprint/src/main/resources/";
-
 			JSONObject response = new JSONObject();
 			JSONObject data = new JSONObject();
 
@@ -155,27 +174,51 @@ public class ReportServiceImpl implements ReportService {
 
 				// Create the context for the report
 				IContext context = xdocReport.createContext();
+
+				FieldsMetadata metadata = xdocReport.createFieldsMetadata();
+				JSONObject inJson = new JSONObject(inputMap);
+				if (inJson.has("images")) {
+					Iterator<String> keyss = inJson.getJSONObject("images").keys();
+					while (keyss.hasNext()) {
+						String keyy = keyss.next();
+						File f = new File(ImgDocBasePath + inJson.getJSONObject("images").getString(keyy));
+						if (!f.exists()) {
+							System.out.println("..........");
+							System.out.println("errorMsg");
+							return "false";
+						}
+						metadata.addFieldAsImage(keyy);
+					}
+				}
+				context = setimages(inJson, context);
+
 				context.put("Head", dataMap);
 
-				String docxOutputFileName = basePath + "xdoc/XDOC_output_" + formattedDate + ".docx";
-				String pdfOutputFileName = basePath + "xdoc/XDOC_output_" + formattedDate + ".pdf";
+				String docxOutputFileName = XdocBasePath + docTemplateName + formattedDate + ".docx";
+				String pdfOutputFileName = XdocBasePath + docTemplateName + formattedDate + ".pdf";
 
-				// Generate and save the XDOC report as DOCX
+				String tempOutputFileName = XdocTempBasePath + docTemplateName + formattedDate + ".pdf";
+
 				try (FileOutputStream outputStream = new FileOutputStream(docxOutputFileName)) {
 					xdocReport.process(context, outputStream);
 				} catch (IOException e) {
 					throw new RuntimeException("Error writing DOCX report: " + docxOutputFileName, e);
 				}
 
-				// Convert DOCX to PDF using iTextPDF
 				try (InputStream docxInputStream = new FileInputStream(docxOutputFileName);
-						FileOutputStream pdfOutputStream = new FileOutputStream(pdfOutputFileName)) {
+						FileOutputStream pdfOutputStream = new FileOutputStream(tempOutputFileName)) {
 					convertToPdf(docxInputStream, pdfOutputStream);
+					String waterMarkLocation = ImgDocBasePath;
+					if (inJson.has("watermark")) {
+						createwatermarkonpdf(tempOutputFileName, pdfOutputFileName,
+								waterMarkLocation + inJson.getString("watermark"));
+					} else {
+						pdfOutputFileName = tempOutputFileName;
+					}
 				} catch (Exception e) {
 					throw new RuntimeException("Error converting DOCX to PDF: " + pdfOutputFileName, e);
 				}
 
-				// Read PDF bytes
 				byte[] pdfBytes;
 				try (InputStream pdfInputStream = new FileInputStream(pdfOutputFileName)) {
 					pdfBytes = IOUtils.toByteArray(pdfInputStream);
@@ -187,8 +230,9 @@ public class ReportServiceImpl implements ReportService {
 				response.put(messageCode, "Xdoc report generated successfully");
 				data.put(attachmentCode, pdfBytes);
 				response.put(dataCode, data);
+			}
 
-			} else if ("Static".equalsIgnoreCase(reportType)) {
+			else if ("Static".equalsIgnoreCase(reportType)) {
 				// Generate static report
 				Optional<String> fileLocation = getFileLocationByTemplateName(docTemplateName);
 
@@ -199,18 +243,26 @@ public class ReportServiceImpl implements ReportService {
 
 				byte[] pdfBytes = readPdfFile(fileLocation.get());
 
-				response.put(statusCode, successCode);
-				response.put(messageCode, "Static report generated successfully");
+				// Save the PDF file to /d: directory
+				try {
+					String outputFilePath = Staticpath + docTemplateName + ".pdf";
+					Files.write(Paths.get(outputFilePath), pdfBytes);
+					response.put(statusCode, successCode);
+					response.put(messageCode, "Static report generated and saved successfully");
 
-				data.put(attachmentCode, pdfBytes);
-				response.put(dataCode, data);
+					data.put(attachmentCode, pdfBytes);
+					response.put(dataCode, data);
+				} catch (IOException e) {
+					return new JSONObject().put(statusCode, errorCode)
+							.put(messageCode, "Failed to save the report: " + e.getMessage()).toString();
+				}
 			}
 
 			else if ("JASPER".equalsIgnoreCase(reportType)) {
 				// Generate Jasper report
 				String location = setup.getDPS_TEMP_LOC();
-				String pdfOutputPath = basePath + "templates/output" + formattedDate + ".pdf";
-				String xlsxOutputPath = basePath + "templates/output" + formattedDate + ".xlsx";
+				String pdfOutputPath = Jasperpath + docTemplateName + formattedDate + ".pdf";
+				String xlsxOutputPath = Jasperpath + docTemplateName + formattedDate + ".xlsx";
 
 				File jrxmlFile = new File(location);
 				if (!jrxmlFile.exists()) {
@@ -239,15 +291,23 @@ public class ReportServiceImpl implements ReportService {
 					throw new RuntimeException("Failed to export report to PDF", e);
 				}
 
+				// Export to XLSX
 				JRXlsxExporter xlsxExporter = new JRXlsxExporter();
 				xlsxExporter.setExporterInput(new SimpleExporterInput(jasperPrint));
 				xlsxExporter.setExporterOutput(new SimpleOutputStreamExporterOutput(xlsxOutputPath));
 				SimpleXlsxReportConfiguration xlsxReportConfiguration = new SimpleXlsxReportConfiguration();
 				xlsxReportConfiguration.setOnePagePerSheet(false);
 				xlsxReportConfiguration.setDetectCellType(true);
+				xlsxExporter.setConfiguration(xlsxReportConfiguration);
+				try {
+					xlsxExporter.exportReport();
+				} catch (JRException e) {
+					throw new RuntimeException("Failed to export report to XLSX", e);
+				}
 
 				// Read PDF and XLSX files into byte arrays
 				byte[] pdfBytes;
+				byte[] xlsxBytes;
 				try (FileInputStream pdfInputStream = new FileInputStream(pdfOutputPath);
 						FileInputStream xlsxInputStream = new FileInputStream(xlsxOutputPath);
 						ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream();
@@ -265,34 +325,34 @@ public class ReportServiceImpl implements ReportService {
 					while ((xlsxByte = xlsxInputStream.read()) != -1) {
 						xlsxOutputStream.write(xlsxByte);
 					}
-					// xlsxBytes = xlsxOutputStream.toByteArray();
+					xlsxBytes = xlsxOutputStream.toByteArray();
 				}
 
 				String username = getUsernameFromSecurityContext();
 
-				if (".xlsx".equalsIgnoreCase(genType)) {
+				if (".pdf".equalsIgnoreCase(genType)) {
 					response.put(statusCode, successCode);
-					response.put(messageCode, "Jasper report XLSX generated successfully");
-					data.put(attachmentCode, pdfBytes);
-					response.put(dataCode, data);
-
-				} else {
-					response.put(statusCode, errorCode);
 					response.put(messageCode, "Jasper report PDF generated successfully");
 					data.put(attachmentCode, pdfBytes);
 					response.put(dataCode, data);
+				} else {
+					response.put(statusCode, successCode); // Changed errorCode to successCode
+					response.put(messageCode, "Jasper report XLSX generated successfully");
+					data.put(attachmentCode, xlsxBytes); // Changed pdfBytes to xlsxBytes
+					response.put(dataCode, data);
 				}
+			}
 
-			} else {
+			else {
 				throw new RuntimeException("Unsupported report type: " + reportType);
 			}
 
-			logservice.logToLJMLogs1("Generated Jasper report", request, setup.getDPS_TEMPLATE_NAME());
+			logservice.logToLJMLogs1("Generated report", request, setup.getDPS_TEMPLATE_NAME());
 
 			return response.toString();
 
 		} catch (Exception e) {
-			logservice.logToError("Generated report", request, e);
+			logservice.logToError("Generated Jasper report", request, e);
 			JSONObject errorResponse = new JSONObject();
 			errorResponse.put(statusCode, errorCode);
 			errorResponse.put(messageCode, "Failed to generate report");
@@ -310,33 +370,9 @@ public class ReportServiceImpl implements ReportService {
 	}
 
 	public void convertToPdf(InputStream docxInputStream, OutputStream pdfOutputStream) throws Exception {
-		// Load DOCX into XWPFDocument
-		XWPFDocument document = new XWPFDocument(docxInputStream);
-
-		// Create PDF Document
-		Document pdfDocument = new Document();
-		PdfWriter.getInstance(pdfDocument, pdfOutputStream);
-
-		// Open the Document
-		pdfDocument.open();
-
-		// Register font directory dynamically
-//		String fontDirectory = "C:/Wenxt_Base_Project/docprint/src/main/resources";
-
-		String fontDirectory = "D:/WeNxt Product/docprint/src/main/resources";
-		BaseFont bf = BaseFont.createFont(fontDirectory + "/NotoSansEthiopic.ttf", BaseFont.IDENTITY_H,
-				BaseFont.EMBEDDED);
-		com.itextpdf.text.Font font = new com.itextpdf.text.Font(bf, 12);
-
-		// Read content from DOCX and add to PDF
-		List<XWPFParagraph> paragraphs = document.getParagraphs();
-		for (XWPFParagraph para : paragraphs) {
-			String text = para.getText();
-			pdfDocument.add(new Paragraph(text, font));
-		}
-
-		// Close the Document
-		pdfDocument.close();
+		final XWPFDocument document = new XWPFDocument(docxInputStream);
+		final PdfOptions options = PdfOptions.create();
+		PdfConverter.getInstance().convert(document, pdfOutputStream, options);
 	}
 
 	private String getUsernameFromSecurityContext() {
@@ -361,5 +397,45 @@ public class ReportServiceImpl implements ReportService {
 
 	public Optional<String> getFileLocationByTemplateName(String docTemplateName) {
 		return lrmdocrprintRepository.findFileLocationByTemplateName(docTemplateName);
+	}
+
+	public IContext setimages(JSONObject ijson, IContext context) {
+		if (ijson.has("images")) {
+			JSONObject imagejson = ijson.getJSONObject("images");
+			Iterator<String> keys = imagejson.keys();
+			while (keys.hasNext()) {
+				String key = keys.next();
+				File file = new File(ImgDocBasePath + imagejson.getString(key));
+				if (file.exists()) {
+					IImageProvider logo = new FileImageProvider(new File(ImgDocBasePath + imagejson.getString(key)));
+					context.put(key, logo);
+				} else {
+					System.out.println("water mark image file not found " + file.getPath());
+				}
+			}
+		}
+		return context;
+	}
+
+	public static void createwatermarkonpdf(final String tempoutfile, final String outfile,
+			final String watermarklocation) throws IOException, DocumentException {
+		PdfReader reader = new PdfReader(tempoutfile);
+		PdfStamper stamp = new PdfStamper(reader, new FileOutputStream(outfile));
+
+		if (null != watermarklocation && !watermarklocation.equals("")) {
+			Image img = Image.getInstance(watermarklocation);
+			img.setAbsolutePosition(200, 400);
+			int n = reader.getNumberOfPages();
+			int i = 0;
+			PdfContentByte under;
+			while (i < n) {
+				i++;
+				under = stamp.getUnderContent(i);
+				under.addImage(img);
+			}
+		}
+		stamp.close();
+		File file = new File(tempoutfile);
+		file.delete();
 	}
 }
