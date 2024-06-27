@@ -54,7 +54,6 @@ public class SecurityConfig {
 				.and()
 				.authorizeHttpRequests() 
 				.requestMatchers("/testLog/**").permitAll()
-				
 				.and()
 				.authorizeHttpRequests() 
 				.requestMatchers("/auth/**").permitAll()

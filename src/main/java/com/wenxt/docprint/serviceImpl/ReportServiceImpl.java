@@ -22,11 +22,16 @@ import org.apache.poi.xwpf.usermodel.XWPFDocument;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lowagie.text.DocumentException;
@@ -168,35 +173,66 @@ public class ReportServiceImpl implements ReportService {
 			JSONObject data = new JSONObject();
 
 			if ("XDOC".equalsIgnoreCase(reportType)) {
-				// Generate XDOC report
 				IXDocReport xdocReport = XDocReportRegistry.getRegistry().loadReport(getTemplatePath(dpsSysid),
 						TemplateEngineKind.Velocity);
 
-				// Create the context for the report
 				IContext context = xdocReport.createContext();
-
 				FieldsMetadata metadata = xdocReport.createFieldsMetadata();
 				JSONObject inJson = new JSONObject(inputMap);
+
 				if (inJson.has("images")) {
-					Iterator<String> keyss = inJson.getJSONObject("images").keys();
-					while (keyss.hasNext()) {
-						String keyy = keyss.next();
-						File f = new File(ImgDocBasePath + inJson.getJSONObject("images").getString(keyy));
-						if (!f.exists()) {
-							System.out.println("..........");
-							System.out.println("errorMsg");
-							return "false";
+					Iterator<String> keys = inJson.getJSONObject("images").keys();
+					while (keys.hasNext()) {
+						String key = keys.next();
+						File file = new File(ImgDocBasePath + inJson.getJSONObject("images").getString(key));
+						if (!file.exists()) {
+							System.out.println("Image file not found: " + file.getAbsolutePath());
+
 						}
-						metadata.addFieldAsImage(keyy);
+						metadata.addFieldAsImage(key);
 					}
 				}
-				context = setimages(inJson, context);
 
+				if (inJson.has("qrcode")) {
+					String authorizationHeader = request.getHeader("Authorization");
+					String token = authorizationHeader.substring(7).trim();
+					HttpHeaders headers = new HttpHeaders();
+					headers.setContentType(MediaType.APPLICATION_JSON);
+					headers.set("Authorization", "Bearer " + token);
+					RestTemplate restTemplate = new RestTemplate();
+
+					try {
+						JSONObject qrData = inJson.getJSONObject("qrcode").getJSONObject("data");
+						String topText = inJson.getJSONObject("qrcode").getString("topText");
+						String bottomText = inJson.getJSONObject("qrcode").getString("bottomText");
+
+						JSONObject qrRequest = new JSONObject();
+						qrRequest.put("data", qrData);
+						qrRequest.put("topText", topText);
+						qrRequest.put("bottomText", bottomText);
+
+						HttpEntity<String> requestEntity = new HttpEntity<>(qrRequest.toString(), headers);
+						String qrServiceUrl = "http://localhost:8098/qr-code/generate";
+						ResponseEntity<String> responseEntity = restTemplate.postForEntity(qrServiceUrl, requestEntity,
+								String.class);
+
+						JSONObject responseJson = new JSONObject(responseEntity.getBody());
+						String qrCodeLocation = responseJson.getJSONObject("Data").getString("Location");
+
+						metadata.addFieldAsImage("qrcode");
+						context.put("qrcode", new FileImageProvider(new File(qrCodeLocation)));
+
+					} catch (Exception e) {
+						
+						return e.getMessage();
+					}
+				}
+
+				context = setimages(inJson, context);
 				context.put("Head", dataMap);
 
 				String docxOutputFileName = XdocBasePath + docTemplateName + formattedDate + ".docx";
 				String pdfOutputFileName = XdocBasePath + docTemplateName + formattedDate + ".pdf";
-
 				String tempOutputFileName = XdocTempBasePath + docTemplateName + formattedDate + ".pdf";
 
 				try (FileOutputStream outputStream = new FileOutputStream(docxOutputFileName)) {
@@ -230,6 +266,8 @@ public class ReportServiceImpl implements ReportService {
 				response.put(messageCode, "Xdoc report generated successfully");
 				data.put(attachmentCode, pdfBytes);
 				response.put(dataCode, data);
+
+				return response.toString();
 			}
 
 			else if ("Static".equalsIgnoreCase(reportType)) {
@@ -243,7 +281,6 @@ public class ReportServiceImpl implements ReportService {
 
 				byte[] pdfBytes = readPdfFile(fileLocation.get());
 
-				// Save the PDF file to /d: directory
 				try {
 					String outputFilePath = Staticpath + docTemplateName + ".pdf";
 					Files.write(Paths.get(outputFilePath), pdfBytes);
@@ -400,20 +437,35 @@ public class ReportServiceImpl implements ReportService {
 	}
 
 	public IContext setimages(JSONObject ijson, IContext context) {
+		// Process regular images
 		if (ijson.has("images")) {
 			JSONObject imagejson = ijson.getJSONObject("images");
 			Iterator<String> keys = imagejson.keys();
 			while (keys.hasNext()) {
 				String key = keys.next();
-				File file = new File(ImgDocBasePath + imagejson.getString(key));
+				String imagePath = ImgDocBasePath + imagejson.getString(key);
+				File file = new File(imagePath);
 				if (file.exists()) {
-					IImageProvider logo = new FileImageProvider(new File(ImgDocBasePath + imagejson.getString(key)));
-					context.put(key, logo);
+					IImageProvider imageProvider = new FileImageProvider(file);
+					context.put(key, imageProvider);
 				} else {
-					System.out.println("water mark image file not found " + file.getPath());
+					System.out.println("Image file not found: " + imagePath);
 				}
 			}
 		}
+
+		// Process QR code images
+		if (ijson.has("qrcode")) {
+			String qrImagePath = context.get("qrcode").toString();
+			File qrFile = new File(qrImagePath);
+			if (qrFile.exists()) {
+				IImageProvider qrProvider = new FileImageProvider(qrFile);
+				context.put("qrcode", qrProvider);
+			} else {
+				System.out.println("QR code image file not found: " + qrImagePath);
+			}
+		}
+
 		return context;
 	}
 
