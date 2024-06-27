@@ -480,7 +480,7 @@ public class ReportServiceImpl implements ReportService {
 
 		if (null != watermarklocation && !watermarklocation.equals("")) {
 			Image img = Image.getInstance(watermarklocation);
-			img.setAbsolutePosition(200, 400);
+			img.setAbsolutePosition(25, 50);
 			int n = reader.getNumberOfPages();
 			int i = 0;
 			PdfContentByte under;
