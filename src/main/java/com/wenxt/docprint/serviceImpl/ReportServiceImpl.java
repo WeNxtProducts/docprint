@@ -91,6 +91,9 @@ public class ReportServiceImpl implements ReportService {
 
 	@Value("${XdocTempBasePath}")
 	private String XdocTempBasePath;
+
+	@Value("${spring.aicbase.url}")
+	private String aicbase;
 	@Autowired
 	private LjmdocPrinsetup lrmdocrprintRepository;
 
@@ -212,7 +215,8 @@ public class ReportServiceImpl implements ReportService {
 						qrRequest.put("bottomText", bottomText);
 
 						HttpEntity<String> requestEntity = new HttpEntity<>(qrRequest.toString(), headers);
-						String qrServiceUrl = "http://localhost:8098/qr-code/generate";
+						String qrServiceUrl = aicbase;
+
 						ResponseEntity<String> responseEntity = restTemplate.postForEntity(qrServiceUrl, requestEntity,
 								String.class);
 
@@ -223,7 +227,7 @@ public class ReportServiceImpl implements ReportService {
 						context.put("qrcode", new FileImageProvider(new File(qrCodeLocation)));
 
 					} catch (Exception e) {
-						
+
 						return e.getMessage();
 					}
 				}
