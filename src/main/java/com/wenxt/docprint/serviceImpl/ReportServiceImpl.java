@@ -28,6 +28,8 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.ColumnMapRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -105,7 +107,8 @@ public class ReportServiceImpl implements ReportService {
 
 	@Autowired
 	private JdbcTemplate jdbcTemplate;
-
+	@Autowired
+	private NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 	@Value("${Staticpath}")
 	private String Staticpath;
 
@@ -129,7 +132,9 @@ public class ReportServiceImpl implements ReportService {
 
 			Map<String, Object> docParms = (Map<String, Object>) inputMap.get("docParms");
 			Map<String, Object> images = (Map<String, Object>) inputMap.get("images");
+			String tranId = (String) inputMap.get("tranId");
 
+			String sysID = (String) inputMap.get("sysId");
 			String sqlQuery = "SELECT dps_sysid FROM ljm_docprint_setup WHERE dps_template_name = ?";
 			Long dpsSysid = jdbcTemplate.queryForObject(sqlQuery, Long.class, docTemplateName);
 
@@ -158,14 +163,26 @@ public class ReportServiceImpl implements ReportService {
 
 				if ("S".equalsIgnoreCase(paramType.trim())) {
 					dataMap.put(paramName, paramValue);
-				} else if ("Q".equalsIgnoreCase(paramType.trim())) {
-					List<Map<String, Object>> queryResult = jdbcTemplate.query(paramValue, new Object[] { dpsSysid },
+				}
+
+				if ("Q".equalsIgnoreCase(paramType.trim())) {
+
+					// Create a Map for named parameters
+					MapSqlParameterSource parameters = new MapSqlParameterSource();
+					parameters.addValue("tranId", tranId);
+					parameters.addValue("sysId", sysID);
+
+					// Execute the query with the named parameters
+					List<Map<String, Object>> queryResult = namedParameterJdbcTemplate.query(paramValue, parameters,
 							new ColumnMapRowMapper());
+
+					// Check if the result is not empty and put the data into the dataMap
 					if (!queryResult.isEmpty()) {
 						Map<String, Object> queryData = queryResult.get(0);
 						dataMap.putAll(queryData);
 					}
 				}
+
 			}
 
 			if (docParms != null) {
