@@ -90,7 +90,7 @@ public class SecurityConfig {
 	    public DataSource dataSource() {
 	        DriverManagerDataSource dataSource = new DriverManagerDataSource();
 	        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-	        dataSource.setUrl("jdbc:oracle:thin:@//192.168.1.151:1521/orcl");
+	        dataSource.setUrl("jdbc:oracle:thin:@//192.168.1.80:1521/orcl");
 	        dataSource.setUsername("LIFE_DEV");
 	        dataSource.setPassword("LIFE_DEV");
 	        return dataSource;
