@@ -8,6 +8,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.Connection;
+import java.sql.DriverManager;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
@@ -159,10 +161,10 @@ public class ReportServiceImpl implements ReportService {
 			for (LjmDocprintParam param : paramList) {
 				String paramType = param.getDPP_TYPE();
 				String paramName = param.getDPP_PARAM_NAME();
-				String paramValue = param.getDPP_VALUE();
+//				String paramValue = param.getDPP_VALUE();
 
 				if ("S".equalsIgnoreCase(paramType.trim())) {
-					dataMap.put(paramName, paramValue);
+					dataMap.put(paramName, param.getDPP_VALUE());
 				}
 
 				if ("Q".equalsIgnoreCase(paramType.trim())) {
@@ -173,13 +175,19 @@ public class ReportServiceImpl implements ReportService {
 					parameters.addValue("sysId", sysID);
 
 					// Execute the query with the named parameters
-					List<Map<String, Object>> queryResult = namedParameterJdbcTemplate.query(paramValue, parameters,
-							new ColumnMapRowMapper());
+					List<Map<String, Object>> queryResult = namedParameterJdbcTemplate.query(param.getDPP_VALUE(),
+							parameters, new ColumnMapRowMapper());
 
 					// Check if the result is not empty and put the data into the dataMap
 					if (!queryResult.isEmpty()) {
 						Map<String, Object> queryData = queryResult.get(0);
 						dataMap.putAll(queryData);
+					}
+				}
+
+				if ("P".equalsIgnoreCase(paramType.trim())) {
+					if (inputMap.get(paramName) != null) {
+						dataMap.put(paramName, inputMap.get(paramName));
 					}
 				}
 
@@ -330,6 +338,7 @@ public class ReportServiceImpl implements ReportService {
 				JasperReport jasperReport;
 				try {
 					jasperReport = JasperCompileManager.compileReport(location);
+					System.out.println(jasperReport);
 				} catch (JRException e) {
 					throw new RuntimeException("Failed to compile JRXML file at location: " + location, e);
 				}
@@ -338,9 +347,20 @@ public class ReportServiceImpl implements ReportService {
 				Map<String, Object> parameters = new HashMap<>(dataMap);
 				parameters.put("WATERMARK_IMAGE", "path/to/watermark/image.png");
 
+//				parameters.putAll(docParms);
+
+				Map<String, Object> parammMap = new HashMap<>();
+//				parammMap.put("param", 1001);
+//				parammMap.put("tranId", 3);
 				JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(
 						Collections.singletonList(parameters));
-				JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, dataSource);
+//				parameters.put("param", 1001);
+
+				Connection conn = null;
+				conn = DriverManager.getConnection("jdbc:oracle:thin:@192.168.1.80:1521:orcl", "LIFE_DEV", "LIFE_DEV");
+
+				System.out.println("PARAMETER: " + parameters);
+				JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
 
 				// Export to PDF
 				try {
@@ -410,6 +430,7 @@ public class ReportServiceImpl implements ReportService {
 			return response.toString();
 
 		} catch (Exception e) {
+			e.printStackTrace();
 			logservice.logToError("Generated Jasper report", request, e);
 			JSONObject errorResponse = new JSONObject();
 			errorResponse.put(statusCode, errorCode);
