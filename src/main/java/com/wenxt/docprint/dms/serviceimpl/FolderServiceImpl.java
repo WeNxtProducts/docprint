@@ -138,68 +138,68 @@ public class FolderServiceImpl implements FolderService {
 		return response.toString();
 	}
 
-//Multiple File Upload
-	public String uploadMultipleFiles(List<Map<String, String>> fileRequests) {
-		JSONArray fileResponses = new JSONArray();
-		JSONObject overallResponse = new JSONObject();
+////Multiple File Upload
+//	public String uploadMultipleFiles(List<Map<String, String>> fileRequests) {
+//		JSONArray fileResponses = new JSONArray();
+//		JSONObject overallResponse = new JSONObject();
+//
+//		for (Map<String, String> fileRequest : fileRequests) {
+//			String foldername = fileRequest.get("foldername");
+//			String filename = fileRequest.get("filename");
+//			String module = fileRequest.get("module");
+//			String tranId = fileRequest.get("TranId");
+//			String docType = fileRequest.get("DocType");
+//
+//			JSONObject response = new JSONObject();
+//			JSONObject data = new JSONObject();
+//
+//			try {
+//				String filePath = uploadFile(foldername, filename, module, tranId);
+//				saveFileDetails(filename, module, tranId, docType, filePath);
+//
+//				response.put(statusCode, successCode);
+//				response.put(messageCode, "File uploaded successfully");
+//				data.put(filepaths, filePath);
+//				response.put(dataCode, data);
+//			} catch (IOException e) {
+//				response.put(statusCode, errorCode);
+//				response.put(messageCode, e.getMessage());
+//				e.printStackTrace();
+//			} catch (SQLException e) {
+//				response.put(statusCode, errorCode);
+//				response.put(messageCode, "Database error: " + e.getMessage());
+//				e.printStackTrace();
+//			}
+//
+//			fileResponses.put(response);
+//		}
+//
+//		overallResponse.put(overallCode, fileResponses);
+//		return overallResponse.toString();
+//	}
 
-		for (Map<String, String> fileRequest : fileRequests) {
-			String foldername = fileRequest.get("foldername");
-			String filename = fileRequest.get("filename");
-			String module = fileRequest.get("module");
-			String tranId = fileRequest.get("TranId");
-			String docType = fileRequest.get("DocType");
-
-			JSONObject response = new JSONObject();
-			JSONObject data = new JSONObject();
-
-			try {
-				String filePath = uploadFile(foldername, filename, module, tranId);
-				saveFileDetails(filename, module, tranId, docType, filePath);
-
-				response.put(statusCode, successCode);
-				response.put(messageCode, "File uploaded successfully");
-				data.put(filepaths, filePath);
-				response.put(dataCode, data);
-			} catch (IOException e) {
-				response.put(statusCode, errorCode);
-				response.put(messageCode, e.getMessage());
-				e.printStackTrace();
-			} catch (SQLException e) {
-				response.put(statusCode, errorCode);
-				response.put(messageCode, "Database error: " + e.getMessage());
-				e.printStackTrace();
-			}
-
-			fileResponses.put(response);
-		}
-
-		overallResponse.put(overallCode, fileResponses);
-		return overallResponse.toString();
-	}
-
-	public String uploadFile(String foldername, String filename, String module, String tranId) throws IOException {
-		File directory = new File(foldername);
-		if (!directory.exists()) {
-			directory.mkdirs();
-		}
-
-		String fileExtension = "";
-		int i = filename.lastIndexOf('.');
-		if (i > 0) {
-			fileExtension = filename.substring(i);
-		}
-
-		String filePath = foldername + "/" + tranId + fileExtension;
-		File dest = new File(filePath);
-
-		if (dest.exists()) {
-			throw new IOException("File already exists: " + filePath);
-		}
-
-		Files.copy(Paths.get(foldername + "/" + filename), dest.toPath());
-		return filePath;
-	}
+//	public String uploadFile(String foldername, String filename, String module, String tranId) throws IOException {
+//		File directory = new File(foldername);
+//		if (!directory.exists()) {
+//			directory.mkdirs();
+//		}
+//
+//		String fileExtension = "";
+//		int i = filename.lastIndexOf('.');
+//		if (i > 0) {
+//			fileExtension = filename.substring(i);
+//		}
+//
+//		String filePath = foldername + "/" + tranId + fileExtension;
+//		File dest = new File(filePath);
+//
+//		if (dest.exists()) {
+//			throw new IOException("File already exists: " + filePath);
+//		}
+//
+//		Files.copy(Paths.get(foldername + "/" + filename), dest.toPath());
+//		return filePath;
+//	}
 
 	private void saveFileDetails(String filename, String module, String tranId, String docType, String filePath)
 			throws SQLException {
@@ -304,5 +304,120 @@ public class FolderServiceImpl implements FolderService {
 		// Return the file path if found, otherwise return an empty Optional
 		return fileAttributesOpt.map(LjmFileAttributes::getFilePath);
 	}
+	
+	
+	@Override
+	public List<LjmFileAttributes> searchFiles(String author, String docType, String fileName, String tranId) {
+
+		if (author != null && !author.isEmpty()) {
+			return repo.findByAuthorContaining(author);
+		} else if (docType != null && !docType.isEmpty()) {
+			return repo.findByDocTypeContaining(docType);
+		} else if (fileName != null && !fileName.isEmpty()) {
+			return repo.findByFileNameContaining(fileName);
+		} else if (tranId != null && !tranId.isEmpty()) {
+			return repo.findByTranIdContaining(tranId);
+		} else {
+			return repo.findAll();
+		}
+
+	}
+	
+	public String uploadMultipleFiles(List<Map<String, String>> fileRequests) {
+        JSONArray fileResponses = new JSONArray();
+        JSONObject overallResponse = new JSONObject();
+
+        for (Map<String, String> fileRequest : fileRequests) {
+            String folderName = fileRequest.get("foldername");
+            String fileName = fileRequest.get("filename");
+            String docModule = fileRequest.get("module");
+            String tranId = fileRequest.get("TranId");
+            String docType = fileRequest.get("DocType");
+            String replaceFlag = fileRequest.get("replaceFlag");
+
+            JSONObject response = new JSONObject();
+            JSONObject data = new JSONObject();
+
+            try {
+                String filePath = uploadDir + docModule + "/" + fileName;
+
+                if ("Y".equalsIgnoreCase(replaceFlag)) {
+                    // If replaceFlag is 'Y', update the file version
+                    filePath = updateFileVersion(folderName, fileName, docModule, tranId);
+                } else {
+                    // Otherwise, upload the new file normally
+                    filePath = uploadFile(folderName, fileName, docModule, tranId);
+                }
+
+                saveFileDetails(fileName, docModule, tranId, docType, filePath);
+
+                response.put("statusCode", "success");
+                response.put("messageCode", "File processed successfully");
+                data.put("filepaths", filePath);
+                response.put("dataCode", data);
+            } catch (IOException e) {
+                response.put("statusCode", "error");
+                response.put("messageCode", e.getMessage());
+                e.printStackTrace();
+            } catch (SQLException e) {
+                response.put("statusCode", "error");
+                response.put("messageCode", "Database error: " + e.getMessage());
+                e.printStackTrace();
+            }
+
+            fileResponses.put(response);
+        }
+
+        overallResponse.put("overallCode", fileResponses);
+        return overallResponse.toString();
+    }
+
+    public String uploadFile(String folderName, String fileName, String docModule, String tranId) throws IOException {
+        String folderPath = uploadDir + docModule;
+        File directory = new File(folderPath);
+        if (!directory.exists()) {
+            directory.mkdirs();
+        }
+
+        String fileExtension = "";
+        int i = fileName.lastIndexOf('.');
+        if (i > 0) {
+            fileExtension = fileName.substring(i);
+        }
+
+        String filePath = folderPath + "/" + tranId + fileExtension;
+        File dest = new File(filePath);
+
+        if (dest.exists()) {
+            throw new IOException("File already exists: " + filePath);
+        }
+
+        Files.copy(Paths.get(folderName + "/" + fileName), dest.toPath());
+        return filePath;
+    }
+
+    public String updateFileVersion(String folderName, String fileName, String docModule, String tranId) throws IOException {
+        String folderPath = uploadDir + docModule;
+        File dest = new File(folderPath + "/" + fileName);
+
+        if (dest.exists()) {
+            int version = 1;
+            String versionedFilePath;
+            while (true) {
+                versionedFilePath = folderPath + "/" + tranId + "_" + version + fileName.substring(fileName.lastIndexOf('.'));
+                File versionedFile = new File(versionedFilePath);
+                if (!versionedFile.exists()) {
+                    break;
+                }
+                version++;
+            }
+            Files.move(dest.toPath(), new File(versionedFilePath).toPath());
+        }
+
+        String newFilePath = folderPath + "/" + tranId + fileName.substring(fileName.lastIndexOf('.'));
+        Files.copy(Paths.get(folderName + "/" + fileName), new File(newFilePath).toPath());
+        return newFilePath;
+    }
+
 
 }

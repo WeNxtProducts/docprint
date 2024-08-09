@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.wenxt.docprint.dms.dto.DocumentRequest;
+import com.wenxt.docprint.dms.model.LjmFileAttributes;
 
 public interface FolderService {
 
@@ -19,5 +20,7 @@ public interface FolderService {
 	String downloadMultipleFiles(List<Map<String, String>> fileRequests);
 
 	String processLinkDocument(DocumentRequest request);
+
+	List<LjmFileAttributes> searchFiles(String author, String docType,String fileName,String tranId);
 
 }

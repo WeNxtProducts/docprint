@@ -7,14 +7,18 @@ import java.util.List;
 import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.wenxt.docprint.dms.dto.DocumentRequest;
 import com.wenxt.docprint.dms.dto.FileRequest;
 import com.wenxt.docprint.dms.dto.FolderRequest;
+import com.wenxt.docprint.dms.model.LjmFileAttributes;
 import com.wenxt.docprint.dms.service.FolderService;
 
 @RestController
@@ -58,5 +62,13 @@ public class FolderController {
 		return folderService.processLinkDocument(request);
 
 	}
+//Search
+	@GetMapping("/search")
+	public ResponseEntity<List<LjmFileAttributes>> searchFiles(@RequestParam(required = false) String author,
+			@RequestParam(required = false) String docType, @RequestParam(required = false) String fileName,
+			@RequestParam(required = false) String tranId) {
 
+		List<LjmFileAttributes> files = folderService.searchFiles(author, docType, fileName, tranId);
+		return ResponseEntity.ok(files);
+	}
 }
