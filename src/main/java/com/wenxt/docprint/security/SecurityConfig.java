@@ -4,6 +4,7 @@ import javax.sql.DataSource;
 import org.jasypt.encryption.StringEncryptor;
 import org.jasypt.encryption.pbe.StandardPBEStringEncryptor;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
@@ -12,17 +13,20 @@ import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.annotation.web.builders.WebSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter; 
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+
 
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig { 
-
+	
+	
 	@Autowired
 	private JwtAuthFilter authFilter; 
 	
@@ -54,6 +58,9 @@ public class SecurityConfig {
 				.and()
 				.authorizeHttpRequests() 
 				.requestMatchers("/testLog/**").permitAll()
+				.and()
+				.authorizeHttpRequests() 
+				.requestMatchers("/dms/**").permitAll()
 				.and()
 				.authorizeHttpRequests() 
 				.requestMatchers("/auth/**").permitAll()
@@ -96,5 +103,26 @@ public class SecurityConfig {
 	        return dataSource;
 	    }
 
-} 
+	  
 
+
+//	
+//	    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+//	        registry.addResourceHandler("/files/**")
+//	                .addResourceLocations("file:" + baseDirectory);
+//	    }
+	    protected void configure(HttpSecurity http) throws Exception {
+	        http
+	            .authorizeRequests(authorizeRequests ->
+	                authorizeRequests
+	                    .requestMatchers("/files/**").permitAll() // Allow access to files
+	                    .anyRequest().authenticated() // Other requests need authentication
+	            )
+	            .csrf(csrf -> csrf.disable()); // Disable CSRF protection
+	    }
+
+	    public void configure(WebSecurity web) throws Exception {
+	        web.ignoring().requestMatchers("/files/**"); // Ignore files path from security
+	    }
+	    
+}

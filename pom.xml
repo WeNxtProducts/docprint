@@ -24,8 +24,6 @@
 		</repository>
 	</repositories>
 	<dependencies>
-
-
 		<!-- Dependency For Security & JWT Auth-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
