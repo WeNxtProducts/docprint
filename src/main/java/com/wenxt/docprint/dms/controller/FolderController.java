@@ -2,11 +2,12 @@ package com.wenxt.docprint.dms.controller;
 
 import java.io.IOException;
 import java.nio.file.FileSystemException;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -42,11 +43,11 @@ public class FolderController {
 	}
 
 //	Multiple upload
-	@PostMapping("/uploadFiles")
-	public String uploadFiles(@RequestBody List<Map<String, String>> fileRequests) throws SQLException {
-
-		return folderService.uploadMultipleFiles(fileRequests);
-	}
+//	@PostMapping("/uploadFiles")
+//	public String uploadFiles(@RequestBody List<Map<String, String>> fileRequests) throws SQLException {
+//
+//		return folderService.uploadMultipleFiles(fileRequests);
+//	}
 
 //	multiple Download
 	@PostMapping("/downloadFiles")
@@ -62,6 +63,7 @@ public class FolderController {
 		return folderService.processLinkDocument(request);
 
 	}
+
 //Search
 	@GetMapping("/search")
 	public ResponseEntity<List<LjmFileAttributes>> searchFiles(@RequestParam(required = false) String author,
@@ -70,5 +72,16 @@ public class FolderController {
 
 		List<LjmFileAttributes> files = folderService.searchFiles(author, docType, fileName, tranId);
 		return ResponseEntity.ok(files);
+	}
+
+	@PostMapping("/uploadMultiple")
+	public ResponseEntity<String> uploadMultipleFiles(@RequestBody List<Map<String, Object>> fileRequests) {
+		try {
+			String response = folderService.uploadMultipleFilesArray(fileRequests);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing file upload.");
+		}
 	}
 }

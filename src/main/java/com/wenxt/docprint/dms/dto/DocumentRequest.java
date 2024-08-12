@@ -33,4 +33,5 @@ public class DocumentRequest {
 	public void setDocType(String docType) {
 		this.docType = docType;
 	}
+	
 }

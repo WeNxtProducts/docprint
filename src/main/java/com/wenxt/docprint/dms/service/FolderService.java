@@ -15,12 +15,14 @@ public interface FolderService {
 
 	String deleteFile(String filePath) throws FileSystemException;
 
-	String uploadMultipleFiles(List<Map<String, String>> fileRequests) throws SQLException;
+//	String uploadMultipleFiles(List<Map<String, String>> fileRequests) throws SQLException;
 
 	String downloadMultipleFiles(List<Map<String, String>> fileRequests);
 
 	String processLinkDocument(DocumentRequest request);
 
-	List<LjmFileAttributes> searchFiles(String author, String docType,String fileName,String tranId);
+	List<LjmFileAttributes> searchFiles(String author, String docType, String fileName, String tranId);
+
+	String uploadMultipleFilesArray(List<Map<String, Object>> fileRequests);
 
 }
