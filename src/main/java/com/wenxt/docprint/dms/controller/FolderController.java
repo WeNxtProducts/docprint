@@ -5,7 +5,6 @@ import java.nio.file.FileSystemException;
 import java.util.List;
 import java.util.Map;
 
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,13 +40,6 @@ public class FolderController {
 		return folderService.deleteFile(fileRequest.getFilePath());
 
 	}
-
-//	Multiple upload
-//	@PostMapping("/uploadFiles")
-//	public String uploadFiles(@RequestBody List<Map<String, String>> fileRequests) throws SQLException {
-//
-//		return folderService.uploadMultipleFiles(fileRequests);
-//	}
 
 //	multiple Download
 	@PostMapping("/downloadFiles")
