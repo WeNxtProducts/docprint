@@ -1,5 +1,6 @@
 package com.wenxt.docprint.dms.model;
 
+
 import java.util.Date;
 
 import jakarta.persistence.Column;
@@ -10,244 +11,246 @@ import jakarta.persistence.Temporal;
 import jakarta.persistence.TemporalType;
 
 @Entity
-@Table(name = "LM_CODES")
-public class LmCodes {
+@Table(name = "LM_codes")
+public class LMCodes {
 
     @Id
-    @Column(name = "PC_CODE", nullable = false, length = 12)
-    private String PC_CODE;
+    @Column(name = "PC_CODE")
+    private String pcCode;
 
-    @Column(name = "PC_TYPE", nullable = false, length = 12)
-    private String PC_TYPE;
+    @Column(name = "PC_TYPE", nullable = false)
+    private String pcType;
 
-    @Column(name = "PC_CLASS_CODE", length = 12)
-    private String PC_CLASS_CODE;
+    @Column(name = "PC_CLASS_CODE")
+    private String pcClassCode;
 
-    @Column(name = "PC_DESC", nullable = false, length = 240)
-    private String PC_DESC;
+    @Column(name = "PC_DESC", nullable = false)
+    private String pcDesc;
 
-    @Column(name = "PC_SHORT_DESC", nullable = false, length = 100)
-    private String PC_SHORT_DESC;
+    @Column(name = "PC_SHORT_DESC", nullable = false)
+    private String pcShortDesc;
 
-    @Column(name = "PC_LONG_DESC", length = 2000)
-    private String PC_LONG_DESC;
+    @Column(name = "PC_LONG_DESC")
+    private String pcLongDesc;
 
-    @Column(name = "PC_BL_DESC", length = 30)
-    private String PC_BL_DESC;
+    @Column(name = "PC_BL_DESC")
+    private String pcBlDesc;
 
-    @Column(name = "PC_BL_SHORT_DESC", length = 15)
-    private String PC_BL_SHORT_DESC;
+    @Column(name = "PC_BL_SHORT_DESC")
+    private String pcBlShortDesc;
 
-    @Column(name = "PC_BL_LONG_DESC", length = 2000)
-    private String PC_BL_LONG_DESC;
+    @Column(name = "PC_BL_LONG_DESC")
+    private String pcBlLongDesc;
 
-    @Column(name = "PC_FRZ_FLAG", nullable = false, length = 1)
-    private String PC_FRZ_FLAG;
+    @Column(name = "PC_FRZ_FLAG", nullable = false)
+    private String pcFrzFlag;
 
     @Column(name = "PC_INS_DT")
     @Temporal(TemporalType.DATE)
-    private Date PC_INS_DT;
+    private Date pcInsDt;
 
-    @Column(name = "PC_INS_ID", length = 12)
-    private String PC_INS_ID;
+    @Column(name = "PC_INS_ID")
+    private String pcInsId;
 
     @Column(name = "PC_MOD_DT")
     @Temporal(TemporalType.DATE)
-    private Date PC_MOD_DT;
+    private Date pcModDt;
 
-    @Column(name = "PC_MOD_ID", length = 12)
-    private String PC_MOD_ID;
+    @Column(name = "PC_MOD_ID")
+    private String pcModId;
 
-    @Column(name = "PC_VALUE", precision = 17, scale = 3)
-    private Double PC_VALUE;
+    @Column(name = "PC_VALUE")
+    private Double pcValue;
 
     @Column(name = "PC_EVENT_FM_DT")
     @Temporal(TemporalType.DATE)
-    private Date PC_EVENT_FM_DT;
+    private Date pcEventFmDt;
 
     @Column(name = "PC_EVENT_TO_DT")
     @Temporal(TemporalType.DATE)
-    private Date PC_EVENT_TO_DT;
+    private Date pcEventToDt;
 
-    @Column(name = "PC_REMARKS", length = 2000)
-    private String PC_REMARKS;
+    @Column(name = "PC_REMARKS")
+    private String pcRemarks;
 
-    @Column(name = "PC_DECL_YN", length = 1)
-    private String PC_DECL_YN;
+    @Column(name = "PC_DECL_YN")
+    private String pcDeclYn;
 
-    @Column(name = "PC_RI_APPL_YN", length = 1)
-    private String PC_RI_APPL_YN;
+    @Column(name = "PC_RI_APPL_YN")
+    private String pcRiApplYn;
 
-    @Column(name = "PC_MODULE_ID", length = 2)
-    private String PC_MODULE_ID;
+    @Column(name = "PC_MODULE_ID")
+    private String pcModuleId;
 
-	public String getPC_CODE() {
-		return PC_CODE;
+	public String getPcCode() {
+		return pcCode;
 	}
 
-	public void setPC_CODE(String pC_CODE) {
-		PC_CODE = pC_CODE;
+	public void setPcCode(String pcCode) {
+		this.pcCode = pcCode;
 	}
 
-	public String getPC_TYPE() {
-		return PC_TYPE;
+	public String getPcType() {
+		return pcType;
 	}
 
-	public void setPC_TYPE(String pC_TYPE) {
-		PC_TYPE = pC_TYPE;
+	public void setPcType(String pcType) {
+		this.pcType = pcType;
 	}
 
-	public String getPC_CLASS_CODE() {
-		return PC_CLASS_CODE;
+	public String getPcClassCode() {
+		return pcClassCode;
 	}
 
-	public void setPC_CLASS_CODE(String pC_CLASS_CODE) {
-		PC_CLASS_CODE = pC_CLASS_CODE;
+	public void setPcClassCode(String pcClassCode) {
+		this.pcClassCode = pcClassCode;
 	}
 
-	public String getPC_DESC() {
-		return PC_DESC;
+	public String getPcDesc() {
+		return pcDesc;
 	}
 
-	public void setPC_DESC(String pC_DESC) {
-		PC_DESC = pC_DESC;
+	public void setPcDesc(String pcDesc) {
+		this.pcDesc = pcDesc;
 	}
 
-	public String getPC_SHORT_DESC() {
-		return PC_SHORT_DESC;
+	public String getPcShortDesc() {
+		return pcShortDesc;
 	}
 
-	public void setPC_SHORT_DESC(String pC_SHORT_DESC) {
-		PC_SHORT_DESC = pC_SHORT_DESC;
+	public void setPcShortDesc(String pcShortDesc) {
+		this.pcShortDesc = pcShortDesc;
 	}
 
-	public String getPC_LONG_DESC() {
-		return PC_LONG_DESC;
+	public String getPcLongDesc() {
+		return pcLongDesc;
 	}
 
-	public void setPC_LONG_DESC(String pC_LONG_DESC) {
-		PC_LONG_DESC = pC_LONG_DESC;
+	public void setPcLongDesc(String pcLongDesc) {
+		this.pcLongDesc = pcLongDesc;
 	}
 
-	public String getPC_BL_DESC() {
-		return PC_BL_DESC;
+	public String getPcBlDesc() {
+		return pcBlDesc;
 	}
 
-	public void setPC_BL_DESC(String pC_BL_DESC) {
-		PC_BL_DESC = pC_BL_DESC;
+	public void setPcBlDesc(String pcBlDesc) {
+		this.pcBlDesc = pcBlDesc;
 	}
 
-	public String getPC_BL_SHORT_DESC() {
-		return PC_BL_SHORT_DESC;
+	public String getPcBlShortDesc() {
+		return pcBlShortDesc;
 	}
 
-	public void setPC_BL_SHORT_DESC(String pC_BL_SHORT_DESC) {
-		PC_BL_SHORT_DESC = pC_BL_SHORT_DESC;
+	public void setPcBlShortDesc(String pcBlShortDesc) {
+		this.pcBlShortDesc = pcBlShortDesc;
 	}
 
-	public String getPC_BL_LONG_DESC() {
-		return PC_BL_LONG_DESC;
+	public String getPcBlLongDesc() {
+		return pcBlLongDesc;
 	}
 
-	public void setPC_BL_LONG_DESC(String pC_BL_LONG_DESC) {
-		PC_BL_LONG_DESC = pC_BL_LONG_DESC;
+	public void setPcBlLongDesc(String pcBlLongDesc) {
+		this.pcBlLongDesc = pcBlLongDesc;
 	}
 
-	public String getPC_FRZ_FLAG() {
-		return PC_FRZ_FLAG;
+	public String getPcFrzFlag() {
+		return pcFrzFlag;
 	}
 
-	public void setPC_FRZ_FLAG(String pC_FRZ_FLAG) {
-		PC_FRZ_FLAG = pC_FRZ_FLAG;
+	public void setPcFrzFlag(String pcFrzFlag) {
+		this.pcFrzFlag = pcFrzFlag;
 	}
 
-	public Date getPC_INS_DT() {
-		return PC_INS_DT;
+	public Date getPcInsDt() {
+		return pcInsDt;
 	}
 
-	public void setPC_INS_DT(Date pC_INS_DT) {
-		PC_INS_DT = pC_INS_DT;
+	public void setPcInsDt(Date pcInsDt) {
+		this.pcInsDt = pcInsDt;
 	}
 
-	public String getPC_INS_ID() {
-		return PC_INS_ID;
+	public String getPcInsId() {
+		return pcInsId;
 	}
 
-	public void setPC_INS_ID(String pC_INS_ID) {
-		PC_INS_ID = pC_INS_ID;
+	public void setPcInsId(String pcInsId) {
+		this.pcInsId = pcInsId;
 	}
 
-	public Date getPC_MOD_DT() {
-		return PC_MOD_DT;
+	public Date getPcModDt() {
+		return pcModDt;
 	}
 
-	public void setPC_MOD_DT(Date pC_MOD_DT) {
-		PC_MOD_DT = pC_MOD_DT;
+	public void setPcModDt(Date pcModDt) {
+		this.pcModDt = pcModDt;
 	}
 
-	public String getPC_MOD_ID() {
-		return PC_MOD_ID;
+	public String getPcModId() {
+		return pcModId;
 	}
 
-	public void setPC_MOD_ID(String pC_MOD_ID) {
-		PC_MOD_ID = pC_MOD_ID;
+	public void setPcModId(String pcModId) {
+		this.pcModId = pcModId;
 	}
 
-	public Double getPC_VALUE() {
-		return PC_VALUE;
+	public Double getPcValue() {
+		return pcValue;
 	}
 
-	public void setPC_VALUE(Double pC_VALUE) {
-		PC_VALUE = pC_VALUE;
+	public void setPcValue(Double pcValue) {
+		this.pcValue = pcValue;
 	}
 
-	public Date getPC_EVENT_FM_DT() {
-		return PC_EVENT_FM_DT;
+	public Date getPcEventFmDt() {
+		return pcEventFmDt;
 	}
 
-	public void setPC_EVENT_FM_DT(Date pC_EVENT_FM_DT) {
-		PC_EVENT_FM_DT = pC_EVENT_FM_DT;
+	public void setPcEventFmDt(Date pcEventFmDt) {
+		this.pcEventFmDt = pcEventFmDt;
 	}
 
-	public Date getPC_EVENT_TO_DT() {
-		return PC_EVENT_TO_DT;
+	public Date getPcEventToDt() {
+		return pcEventToDt;
 	}
 
-	public void setPC_EVENT_TO_DT(Date pC_EVENT_TO_DT) {
-		PC_EVENT_TO_DT = pC_EVENT_TO_DT;
+	public void setPcEventToDt(Date pcEventToDt) {
+		this.pcEventToDt = pcEventToDt;
 	}
 
-	public String getPC_REMARKS() {
-		return PC_REMARKS;
+	public String getPcRemarks() {
+		return pcRemarks;
 	}
 
-	public void setPC_REMARKS(String pC_REMARKS) {
-		PC_REMARKS = pC_REMARKS;
+	public void setPcRemarks(String pcRemarks) {
+		this.pcRemarks = pcRemarks;
 	}
 
-	public String getPC_DECL_YN() {
-		return PC_DECL_YN;
+	public String getPcDeclYn() {
+		return pcDeclYn;
 	}
 
-	public void setPC_DECL_YN(String pC_DECL_YN) {
-		PC_DECL_YN = pC_DECL_YN;
+	public void setPcDeclYn(String pcDeclYn) {
+		this.pcDeclYn = pcDeclYn;
 	}
 
-	public String getPC_RI_APPL_YN() {
-		return PC_RI_APPL_YN;
+	public String getPcRiApplYn() {
+		return pcRiApplYn;
 	}
 
-	public void setPC_RI_APPL_YN(String pC_RI_APPL_YN) {
-		PC_RI_APPL_YN = pC_RI_APPL_YN;
+	public void setPcRiApplYn(String pcRiApplYn) {
+		this.pcRiApplYn = pcRiApplYn;
 	}
 
-	public String getPC_MODULE_ID() {
-		return PC_MODULE_ID;
+	public String getPcModuleId() {
+		return pcModuleId;
 	}
 
-	public void setPC_MODULE_ID(String pC_MODULE_ID) {
-		PC_MODULE_ID = pC_MODULE_ID;
+	public void setPcModuleId(String pcModuleId) {
+		this.pcModuleId = pcModuleId;
 	}
 
+    // Getters and Setters
+    
     
 }

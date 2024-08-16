@@ -23,12 +23,14 @@ import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
 
 import com.wenxt.docprint.dms.dto.DocumentRequest;
 import com.wenxt.docprint.dms.model.LjmFileAttributes;
 import com.wenxt.docprint.dms.repo.LjmFileAttributesRepository;
+import com.wenxt.docprint.dms.repo.lmcodesRepo;
 import com.wenxt.docprint.dms.service.FolderService;
 
 @Service
@@ -71,6 +73,21 @@ public class FolderServiceImpl implements FolderService {
 
 	@Autowired
 	private LjmFileAttributesRepository repo;
+
+	@Value("${spring.dms.byteArray}")
+	private String byteArrayProperty;
+
+	@Value("${spring.dms.dms_status}")
+	private String dmsStatusProperty;
+
+	@Value("${spring.dms.tran_Id}")
+	private String tranIdProperty;
+
+	@Autowired
+	private lmcodesRepo lmrepo;
+
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
 
 //create folder
 	public String createFolder(String folderPath) throws IOException {
@@ -259,73 +276,6 @@ public class FolderServiceImpl implements FolderService {
 		}
 
 	}
-	/*
-	 * // upload multiple fils public String uploadMultipleFiles(List<Map<String,
-	 * String>> fileRequests) { JSONArray fileResponses = new JSONArray();
-	 * JSONObject overallResponse = new JSONObject();
-	 * 
-	 * for (Map<String, String> fileRequest : fileRequests) { String folderName =
-	 * fileRequest.get("foldername"); String fileName = fileRequest.get("filename");
-	 * String docModule = fileRequest.get("module"); String tranId =
-	 * fileRequest.get("TranId"); String docType = fileRequest.get("DocType");
-	 * String replaceFlag = fileRequest.get("replaceFlag");
-	 * 
-	 * JSONObject response = new JSONObject(); JSONObject data = new JSONObject();
-	 * 
-	 * try { String filePath = uploadDir + docModule + "/" + fileName;
-	 * 
-	 * if ("Y".equalsIgnoreCase(replaceFlag)) { // If replaceFlag is 'Y', update the
-	 * file version filePath = updateFileVersion(folderName, fileName, docModule,
-	 * tranId); } else { // Otherwise, upload the new file normally filePath =
-	 * uploadFile(folderName, fileName, docModule, tranId); }
-	 * 
-	 * saveFileDetails(fileName, docModule, tranId, docType, filePath);
-	 * 
-	 * response.put("statusCode", "success"); response.put("messageCode",
-	 * "File processed successfully"); data.put("filepaths", filePath);
-	 * response.put("dataCode", data); } catch (IOException e) {
-	 * response.put("statusCode", "error"); response.put("messageCode",
-	 * e.getMessage()); e.printStackTrace(); } catch (SQLException e) {
-	 * response.put("statusCode", "error"); response.put("messageCode",
-	 * "Database error: " + e.getMessage()); e.printStackTrace(); }
-	 * 
-	 * fileResponses.put(response); }
-	 * 
-	 * overallResponse.put("overallCode", fileResponses); return
-	 * overallResponse.toString(); }
-	 * 
-	 * public String uploadFile(String folderName, String fileName, String
-	 * docModule, String tranId) throws IOException { String folderPath = uploadDir
-	 * + docModule; File directory = new File(folderPath); if (!directory.exists())
-	 * { directory.mkdirs(); }
-	 * 
-	 * String fileExtension = ""; int i = fileName.lastIndexOf('.'); if (i > 0) {
-	 * fileExtension = fileName.substring(i); }
-	 * 
-	 * String filePath = folderPath + "/" + tranId + fileExtension; File dest = new
-	 * File(filePath);
-	 * 
-	 * if (dest.exists()) { throw new IOException("File already exists: " +
-	 * filePath); }
-	 * 
-	 * Files.copy(Paths.get(folderName + "/" + fileName), dest.toPath()); return
-	 * filePath; }
-	 * 
-	 * public String updateFileVersion(String folderName, String fileName, String
-	 * docModule, String tranId) throws IOException { String folderPath = uploadDir
-	 * + docModule; File dest = new File(folderPath + "/" + fileName);
-	 * 
-	 * if (dest.exists()) { int version = 1; String versionedFilePath; while (true)
-	 * { versionedFilePath = folderPath + "/" + tranId + "_" + version +
-	 * fileName.substring(fileName.lastIndexOf('.')); File versionedFile = new
-	 * File(versionedFilePath); if (!versionedFile.exists()) { break; } version++; }
-	 * Files.move(dest.toPath(), new File(versionedFilePath).toPath()); }
-	 * 
-	 * String newFilePath = folderPath + "/" + tranId +
-	 * fileName.substring(fileName.lastIndexOf('.'));
-	 * Files.copy(Paths.get(folderName + "/" + fileName), new
-	 * File(newFilePath).toPath()); return newFilePath; }
-	 */
 
 	public String uploadMultipleFilesArray(List<Map<String, Object>> fileRequests) {
 		JSONArray fileResponses = new JSONArray();
@@ -333,7 +283,7 @@ public class FolderServiceImpl implements FolderService {
 
 		for (Map<String, Object> fileRequest : fileRequests) {
 			// Convert the list of integers to byte[]
-			List<Integer> byteArrayList = (List<Integer>) fileRequest.get("byteArry");
+			List<Integer> byteArrayList = (List<Integer>) fileRequest.get("byteArray");
 			byte[] byteArray = new byte[byteArrayList.size()];
 			for (int i = 0; i < byteArrayList.size(); i++) {
 				byteArray[i] = byteArrayList.get(i).byteValue();
@@ -343,18 +293,38 @@ public class FolderServiceImpl implements FolderService {
 			String tranId = (String) fileRequest.get("TranId");
 			String docType = (String) fileRequest.get("DocType");
 			String replaceFlag = (String) fileRequest.get("replaceFlag");
+			String actfilename = (String) fileRequest.get("filename");
+			String genType = (String) fileRequest.get("genType");
+			String dms_status = (String) fileRequest.get("dmsStatus");
+			String screenName = (String) fileRequest.get("screenName");
+			String uploadscrn = (String) fileRequest.get("uploadscrn");
 
 			JSONObject response = new JSONObject();
 			JSONObject data = new JSONObject();
 
 			try {
-				// Generate file path based on document module and transaction ID
-				String fileName = tranId + "." + docType; // Example file naming convention
-				String filePath = uploadDir + fileName;
+
+				String filePath = ""; // Initialize filePath variable
+				String fileName = docType + "_" + actfilename + "." + genType; // Construct file name based on docType
+																				// and filename
+
+				if ("DMS".equalsIgnoreCase(screenName)) {
+
+					Optional<String> pcDescOptional = lmrepo.findPcDescByPcTypeAndPcCode(screenName, uploadscrn);
+
+					if (pcDescOptional.isPresent()) {
+						String pcDesc = pcDescOptional.get();
+						System.out.println(pcDesc + "ppp");
+						// Construct file path based on PC_DESC
+						filePath = pcDesc + fileName;
+					} else {
+						System.out.println("No description found for the provided PC_TYPE and PC_CODE");
+					}
+				}
 
 				if ("Y".equalsIgnoreCase(replaceFlag)) {
 					// If replaceFlag is 'Y', update the file version
-					filePath = updateFileVersionArray(filePath,docModule);
+					filePath = updateFileVersionArray(filePath, docModule);
 				}
 				saveFileDetails(fileName, docModule, tranId, docType, filePath);
 
@@ -363,17 +333,16 @@ public class FolderServiceImpl implements FolderService {
 
 				// Save file details to database
 
-				response.put("statusCode", "success");
-				response.put("messageCode", "File processed successfully");
-				data.put("filepaths", filePath);
-				response.put("dataCode", data);
-			} catch (IOException e) {
-				response.put("statusCode", "error");
-				response.put("messageCode", e.getMessage());
-				e.printStackTrace();
+				data.put(byteArrayProperty, byteArrayList);
+				data.put(dmsStatusProperty, "Y");
+				data.put(tranIdProperty, tranId);
+
+				response.put(statusCode, successCode);
+				response.put(messageCode, "File Uploaded successfully");
+				response.put(dataCode, data);
 			} catch (SQLException e) {
-				response.put("statusCode", "error");
-				response.put("messageCode", "Database error: " + e.getMessage());
+				response.put(statusCode, errorCode);
+				response.put(messageCode, "Database error: " + e.getMessage());
 				e.printStackTrace();
 			}
 
@@ -384,76 +353,57 @@ public class FolderServiceImpl implements FolderService {
 		return overallResponse.toString();
 	}
 
-	private void uploadFileArray(byte[] byteArray, String filePath) throws IOException {
+	private void uploadFileArray(byte[] byteArray, String filePath) {
 		File file = new File(filePath);
+		File parentDir = file.getParentFile();
+
+		// Check if the parent directory exists, if not, create it
+		if (!parentDir.exists()) {
+			boolean dirsCreated = parentDir.mkdirs(); // Create directories if they don't exist
+			if (!dirsCreated) {
+				throw new RuntimeException("Failed to create directory: " + parentDir.getAbsolutePath());
+			}
+		}
+
 		try (FileOutputStream fos = new FileOutputStream(file)) {
 			fos.write(byteArray);
+		} catch (IOException e) {
+			e.printStackTrace(); // Log the exception
+			throw new RuntimeException("Failed to upload file: " + filePath, e);
 		}
 	}
+
 	private String updateFileVersionArray(String filePath, String docModule) {
-	    File file = new File(filePath);
-	    String directory = file.getParent();
-	    String fileName = file.getName();
-	    String baseName = fileName;
-	    String extension = "";
+		File file = new File(filePath);
+		String directory = file.getParent();
+		String fileName = file.getName();
+		String baseName = fileName;
+		String extension = "";
 
-	    // Check if the file has an extension
-	    int dotIndex = fileName.lastIndexOf('.');
-	    if (dotIndex > 0) {
-	        baseName = fileName.substring(0, dotIndex);
-	        extension = fileName.substring(dotIndex); // Include the dot in the extension
-	    }
+		// Check if the file has an extension
+		int dotIndex = fileName.lastIndexOf('.');
+		if (dotIndex > 0) {
+			baseName = fileName.substring(0, dotIndex);
+			extension = fileName.substring(dotIndex); // Include the dot in the extension
+		}
 
-	    // Create directory for the module if it doesn't exist
-	    String directoryPath = directory + File.separator + docModule;
-	    File moduleDirectory = new File(directoryPath);
-	    if (!moduleDirectory.exists()) {
-	        moduleDirectory.mkdirs(); // Create the directory if it does not exist
-	    }
+		// Create directory for the module if it doesn't exist
+		String directoryPath = directory + File.separator + docModule;
+		File moduleDirectory = new File(directoryPath);
+		if (!moduleDirectory.exists()) {
+			moduleDirectory.mkdirs(); // Create the directory if it does not exist
+		}
 
-	    // Find a new version number
-	    int version = 1;
-	    File newFile;
-	    do {
-	        String newFileName = baseName + "_v" + version + extension;
-	        newFile = new File(directoryPath, newFileName);
-	        version++;
-	    } while (newFile.exists());
+		// Find a new version number
+		int version = 1;
+		File newFile;
+		do {
+			String newFileName = baseName + "_v" + version + extension;
+			newFile = new File(directoryPath, newFileName);
+			version++;
+		} while (newFile.exists());
 
-	    return newFile.getAbsolutePath();
+		return newFile.getAbsolutePath();
 	}
-	
-
-//	private String updateFileVersionArray(String filePath,String docModule) {
-//		File file = new File(filePath);
-//		String directory = file.getParent();
-//		String fileName = file.getName();
-//		String baseName = fileName;
-//		String docModules=docModule;
-//		String extension = "";
-//
-//		// Check if the file has an extension
-//		int dotIndex = fileName.lastIndexOf('.');
-//		if (dotIndex > 0) {
-//			baseName = fileName.substring(0, dotIndex);
-//			extension = fileName.substring(dotIndex); // Include the dot in the extension
-//		}
-//
-//		// Find a new version number
-//		int version = 1;
-//		File newFile;
-//		do {
-//			String newFileName = baseName + "_v" + version + extension;
-//			directoryPath=directory+"\"+docModules;
-//			
-//			System.out.println(baseName);
-//			System.out.println(version);
-//			newFile = new File(directoryPath, newFileName);
-//			System.out.println(directoryPath);
-//			version++;
-//		} while (newFile.exists());
-//
-//		return newFile.getAbsolutePath();
-//	}
 
 }
