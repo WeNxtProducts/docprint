@@ -329,7 +329,7 @@ public class FolderServiceImpl implements FolderService {
 			fileResponses.put(response);
 		}
 
-		overallResponse.put("overall", fileResponses);
+		overallResponse.put(overallCode, fileResponses);
 		return overallResponse.toString();
 	}
 
