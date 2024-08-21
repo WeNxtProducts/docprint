@@ -22,4 +22,8 @@ public interface FolderService {
 
 	String uploadMultipleFilesArray(List<Map<String, Object>> fileRequests);
 
+	List<List<Integer>> getFileByteArrays(List<String> paths) throws IOException;
+
+	Map<String, Object> deleteFiles(List<String> docsysIds);
+
 }

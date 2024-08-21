@@ -8,21 +8,19 @@ import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import javax.sql.DataSource;
+import java.util.stream.Collectors;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StreamUtils;
@@ -51,6 +49,9 @@ public class FolderServiceImpl implements FolderService {
 	@Value("${spring.error.code}")
 	private String errorCode;
 
+	@Value("${spring.warning.code}")
+	private String warnCode;
+
 	@Value("${dms.file.upload}")
 	private String uploadDir;
 
@@ -60,16 +61,14 @@ public class FolderServiceImpl implements FolderService {
 	@Value("${spring.file.overall}")
 	private String overallCode;
 
+	@Value("${file.attributes.update.status.query}")
+	private String updateStatusQuery;
+
 	@Value("${file.attributes.insert.query}")
 	private String insertQuery;
-	@Autowired
-	private Environment env;
 
 	@Value("${dms.file.deeplink}")
 	private String outputFilePath;
-
-	@Autowired
-	private DataSource dataSource;
 
 	@Autowired
 	private LjmFileAttributesRepository repo;
@@ -87,9 +86,11 @@ public class FolderServiceImpl implements FolderService {
 	private lmcodesRepo lmrepo;
 
 	@Autowired
+	private LjmFileAttributesRepository filerepo;
+
+	@Autowired
 	private JdbcTemplate jdbcTemplate;
 
-//create folder
 	public String createFolder(String folderPath) throws IOException {
 		Path path = Paths.get(folderPath);
 		JSONObject response = new JSONObject();
@@ -120,7 +121,6 @@ public class FolderServiceImpl implements FolderService {
 		return response.toString();
 	}
 
-//	delete file
 	@Override
 	public String deleteFile(String filePath) throws FileSystemException {
 		JSONObject response = new JSONObject();
@@ -156,31 +156,26 @@ public class FolderServiceImpl implements FolderService {
 		return response.toString();
 	}
 
-	private void saveFileDetails(String filename, String module, String tranId, String docType, String filePath)
-			throws SQLException {
+	public String saveFileDetails(String filename, String module, String tranId, String docType, String filePath) {
+		LjmFileAttributes fileDetails = new LjmFileAttributes();
+		fileDetails.setFileName(filename);
+		fileDetails.setDocModule(module);
+		fileDetails.setTranId(tranId);
+		fileDetails.setDocType(docType);
+		fileDetails.setFilePath(filePath);
+		fileDetails.setStatus("Y");
 
-		String insertQuery = env.getProperty("file.attributes.insert.query");
-		try (Connection connection = dataSource.getConnection();
-				PreparedStatement preparedStatement = connection.prepareStatement(insertQuery)) {
-			preparedStatement.setString(1, filename);
-			preparedStatement.setString(2, docType);
-			preparedStatement.setString(3, tranId);
-			preparedStatement.setString(4, module);
-			preparedStatement.setString(5, filePath);
-			preparedStatement.setString(6, "S");
+		LjmFileAttributes savedFileDetails = filerepo.save(fileDetails);
 
-			preparedStatement.executeUpdate();
-		}
+		return savedFileDetails.getId().toString();
 	}
 
-//Multiple File Download
 	public String downloadMultipleFiles(List<Map<String, String>> fileRequests) {
 		JSONArray fileResponses = new JSONArray();
 
 		for (Map<String, String> fileRequest : fileRequests) {
 			String path = fileRequest.get("path");
 			JSONObject response = new JSONObject();
-//			JSONObject data = new JSONObject();
 
 			try {
 				byte[] fileData = getFileAsByteArray(path);
@@ -196,7 +191,6 @@ public class FolderServiceImpl implements FolderService {
 			fileResponses.put(response);
 		}
 
-		// Wrap the responses in an overall JSON object
 		JSONObject overallResponse = new JSONObject();
 		overallResponse.put("files", fileResponses);
 
@@ -219,7 +213,7 @@ public class FolderServiceImpl implements FolderService {
 		String tranId = request.getTranId();
 
 		if ("TranDoc".equalsIgnoreCase(docType)) {
-			// Query the repository to find the file attributes by TranId
+
 			Optional<LjmFileAttributes> fileAttributesOpt = repo.findByTranId(tranId);
 
 			if (!fileAttributesOpt.isPresent()) {
@@ -227,16 +221,13 @@ public class FolderServiceImpl implements FolderService {
 						.put("messageCode", "Template not found for TranId: " + tranId).toString();
 			}
 
-			// Get the file path from the file attributes
 			String filePath = fileAttributesOpt.get().getFilePath();
 
-			// Convert the file path to an HTTP URL
 			String baseUrl = "http://localhost:8097/files/";
 			String fileUrl = baseUrl + filePath.replace("D://", "").replace("\\", "/");
 
 //			 String fileUrl=filePath;
 
-			// Prepare the response
 			JSONObject response = new JSONObject();
 			response.put("statusCode", "success");
 			response.put("messageCode", "Static report generated and saved successfully");
@@ -295,71 +286,59 @@ public class FolderServiceImpl implements FolderService {
 			String replaceFlag = (String) fileRequest.get("replaceFlag");
 			String actfilename = (String) fileRequest.get("filename");
 			String genType = (String) fileRequest.get("genType");
-			String dms_status = (String) fileRequest.get("dmsStatus");
+			String dms_status = (String) fileRequest.get("dms_status");
 			String screenName = (String) fileRequest.get("screenName");
 			String uploadscrn = (String) fileRequest.get("uploadscrn");
 
 			JSONObject response = new JSONObject();
 			JSONObject data = new JSONObject();
 
-			try {
+			String filePath = ""; // Initialize filePath variable
+			String fileName = docType + "_" + actfilename + "." + genType; // Construct file name based on docType
+																			// and filename
 
-				String filePath = ""; // Initialize filePath variable
-				String fileName = docType + "_" + actfilename + "." + genType; // Construct file name based on docType
-																				// and filename
+			if ("DMS".equalsIgnoreCase(screenName)) {
 
-				if ("DMS".equalsIgnoreCase(screenName)) {
+				Optional<String> pcDescOptional = lmrepo.findPcDescByPcTypeAndPcCode(screenName, uploadscrn);
 
-					Optional<String> pcDescOptional = lmrepo.findPcDescByPcTypeAndPcCode(screenName, uploadscrn);
-
-					if (pcDescOptional.isPresent()) {
-						String pcDesc = pcDescOptional.get();
-						System.out.println(pcDesc + "ppp");
-						// Construct file path based on PC_DESC
-						filePath = pcDesc + fileName;
-					} else {
-						System.out.println("No description found for the provided PC_TYPE and PC_CODE");
-					}
+				if (pcDescOptional.isPresent()) {
+					String pcDesc = pcDescOptional.get();
+					filePath = pcDesc + fileName;
 				}
-
-				if ("Y".equalsIgnoreCase(replaceFlag)) {
-					// If replaceFlag is 'Y', update the file version
-					filePath = updateFileVersionArray(filePath, docModule);
-				}
-				saveFileDetails(fileName, docModule, tranId, docType, filePath);
-
-				// Upload the file
-				uploadFileArray(byteArray, filePath);
-
-				// Save file details to database
-
-				data.put(byteArrayProperty, byteArrayList);
-				data.put(dmsStatusProperty, "Y");
-				data.put(tranIdProperty, tranId);
-
-				response.put(statusCode, successCode);
-				response.put(messageCode, "File Uploaded successfully");
-				response.put(dataCode, data);
-			} catch (SQLException e) {
-				response.put(statusCode, errorCode);
-				response.put(messageCode, "Database error: " + e.getMessage());
-				e.printStackTrace();
 			}
+
+//			if ("Y".equalsIgnoreCase(replaceFlag)) {
+//			
+//				filePath = updateFileVersionArray(filePath, docModule);
+//			}
+			// Save file details and get generated ID
+			String genid = saveFileDetails(fileName, docModule, tranId, docType, filePath);
+
+			// Upload the file
+			uploadFileArray(byteArray, filePath);
+
+			data.put("filePath", filePath);
+			data.put(dmsStatusProperty, "Y");
+			data.put(tranIdProperty, tranId);
+			data.put("DocType", docType);
+			data.put("doc_sys_id", genid);
+			response.put(statusCode, successCode);
+			response.put(messageCode, "File Uploaded successfully");
+			response.put(dataCode, data);
 
 			fileResponses.put(response);
 		}
 
-		overallResponse.put("overallCode", fileResponses);
+		overallResponse.put("overall", fileResponses);
 		return overallResponse.toString();
 	}
 
-	private void uploadFileArray(byte[] byteArray, String filePath) {
+	private String uploadFileArray(byte[] byteArray, String filePath) {
 		File file = new File(filePath);
 		File parentDir = file.getParentFile();
 
-		// Check if the parent directory exists, if not, create it
 		if (!parentDir.exists()) {
-			boolean dirsCreated = parentDir.mkdirs(); // Create directories if they don't exist
+			boolean dirsCreated = parentDir.mkdirs();
 			if (!dirsCreated) {
 				throw new RuntimeException("Failed to create directory: " + parentDir.getAbsolutePath());
 			}
@@ -371,6 +350,7 @@ public class FolderServiceImpl implements FolderService {
 			e.printStackTrace(); // Log the exception
 			throw new RuntimeException("Failed to upload file: " + filePath, e);
 		}
+		return filePath;
 	}
 
 	private String updateFileVersionArray(String filePath, String docModule) {
@@ -380,21 +360,18 @@ public class FolderServiceImpl implements FolderService {
 		String baseName = fileName;
 		String extension = "";
 
-		// Check if the file has an extension
 		int dotIndex = fileName.lastIndexOf('.');
 		if (dotIndex > 0) {
 			baseName = fileName.substring(0, dotIndex);
 			extension = fileName.substring(dotIndex); // Include the dot in the extension
 		}
 
-		// Create directory for the module if it doesn't exist
 		String directoryPath = directory + File.separator + docModule;
 		File moduleDirectory = new File(directoryPath);
 		if (!moduleDirectory.exists()) {
 			moduleDirectory.mkdirs(); // Create the directory if it does not exist
 		}
 
-		// Find a new version number
 		int version = 1;
 		File newFile;
 		do {
@@ -404,6 +381,89 @@ public class FolderServiceImpl implements FolderService {
 		} while (newFile.exists());
 
 		return newFile.getAbsolutePath();
+	}
+
+	public List<List<Integer>> getFileByteArrays(List<String> filePaths) throws IOException {
+		List<List<Integer>> byteArrayList = new ArrayList<>();
+
+		for (String filePath : filePaths) {
+			File file = new File(filePath);
+
+			if (!file.exists()) {
+				throw new IOException("File not found: " + filePath);
+			}
+
+			byte[] byteArray = Files.readAllBytes(Paths.get(filePath));
+			byteArrayList.add(byteArrayToList(byteArray));
+		}
+
+		return byteArrayList;
+	}
+
+	private List<Integer> byteArrayToList(byte[] byteArray) {
+		List<Integer> list = new ArrayList<>();
+		for (byte b : byteArray) {
+			list.add((int) b);
+		}
+		return list;
+	}
+
+	public Map<String, Object> deleteFiles(List<String> docsysIds) {
+		Map<String, Object> response = new HashMap<>();
+		Map<String, Object> data = new HashMap<>();
+
+		if (docsysIds.isEmpty()) {
+			response.put("status", "ERROR");
+			response.put("status_msg", "No IDs provided for update");
+			return response;
+		}
+
+		try {
+
+			List<Integer> intDocsysIds = docsysIds.stream().map(Integer::parseInt).collect(Collectors.toList());
+
+			int updatedCount = updateFilesStatus(intDocsysIds);
+
+			if (updatedCount == intDocsysIds.size()) {
+				data.put("doc_sys_id", docsysIds);
+				response.put(statusCode, successCode);
+				response.put(messageCode, "Given ID(s) status have been updated successfully");
+				response.put(dataCode, data);
+			} else {
+
+				List<String> notUpdatedIds = new ArrayList<>(docsysIds.subList(updatedCount, docsysIds.size()));
+
+				data.put("doc_sys_id", notUpdatedIds);
+				response.put(statusCode, warnCode);
+				response.put(messageCode, "Some of the given ID(s) were not found or updated");
+				response.put(dataCode, data);
+			}
+
+		} catch (Exception e) {
+			response.put(statusCode, errorCode);
+			response.put(messageCode, "An error occurred during update: " + e.getMessage());
+		}
+
+		return response;
+	}
+
+	private int updateFilesStatus(List<Integer> docsysIds) {
+		if (docsysIds.isEmpty()) {
+			return 0;
+		}
+
+		try {
+
+			String placeholders = String.join(",", Collections.nCopies(docsysIds.size(), "?"));
+			String queryWithPlaceholders = String.format(updateStatusQuery, placeholders);
+
+			return jdbcTemplate.update(queryWithPlaceholders, docsysIds.toArray());
+
+		} catch (Exception e) {
+
+			System.err.println("An error occurred during update: " + e.getMessage());
+			throw e;
+		}
 	}
 
 }

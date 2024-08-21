@@ -2,6 +2,7 @@ package com.wenxt.docprint.dms.controller;
 
 import java.io.IOException;
 import java.nio.file.FileSystemException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -27,13 +28,11 @@ public class FolderController {
 	@Autowired
 	private FolderService folderService;
 
-//create Folder
 	@PostMapping("/createFolder")
 	public String createFolder(@RequestBody FolderRequest folderRequest) throws IOException {
 		return folderService.createFolder(folderRequest.getFolderPath());
 	}
 
-//Delete Folder
 	@PostMapping("/deleteFile")
 	public String deleteFile(@RequestBody FileRequest fileRequest) throws FileSystemException {
 
@@ -41,14 +40,11 @@ public class FolderController {
 
 	}
 
-//	multiple Download
 	@PostMapping("/downloadFiles")
 	public String downloadFiles(@RequestBody List<Map<String, String>> fileRequests) {
 		return folderService.downloadMultipleFiles(fileRequests);
 
 	}
-
-//	DeepLink
 
 	@PostMapping("/process")
 	public String processLinkDocument(@RequestBody DocumentRequest request) {
@@ -56,7 +52,6 @@ public class FolderController {
 
 	}
 
-//Search
 	@GetMapping("/search")
 	public ResponseEntity<List<LjmFileAttributes>> searchFiles(@RequestParam(required = false) String author,
 			@RequestParam(required = false) String docType, @RequestParam(required = false) String fileName,
@@ -76,4 +71,26 @@ public class FolderController {
 			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing file upload.");
 		}
 	}
+
+	@PostMapping("/view")
+	public ResponseEntity<Map<String, Object>> viewFiles(@RequestBody List<Map<String, String>> filePaths)
+			throws IOException {
+		Map<String, Object> response = new HashMap<>();
+		List<String> paths = filePaths.stream().map(filePathMap -> filePathMap.get("path")).toList();
+
+		List<List<Integer>> byteArrayList = folderService.getFileByteArrays(paths);
+		response.put("status", "SUCCESS");
+		response.put("status_msg", "Files processed successfully");
+		response.put("byteArray", byteArrayList);
+		return ResponseEntity.ok(response);
+	}
+
+	@PostMapping("/deleteFiles")
+	public ResponseEntity<Map<String, Object>> deleteFiles(@RequestBody Map<String, List<String>> request) {
+		List<String> docsysIds = request.get("doc_sys_id");
+
+		Map<String, Object> result = folderService.deleteFiles(docsysIds);
+		return ResponseEntity.ok(result);
+	}
+
 }

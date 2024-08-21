@@ -8,6 +8,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Lob;
+import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
 @Entity
@@ -15,7 +16,8 @@ import jakarta.persistence.Table;
 public class LjmFileAttributes {
 
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+  	@SequenceGenerator(name = "fileSysIdSeq", sequenceName = "FILE_SYS_ID_SEQ", allocationSize = 1)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "fileSysIdSeq")
 	@Column(name = "LJM_SYS_ID", nullable = false)
 	private Long id;
 
