@@ -8,6 +8,7 @@ import java.nio.file.FileSystemException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.Collections;
@@ -292,9 +293,11 @@ public class FolderServiceImpl implements FolderService {
 
 			JSONObject response = new JSONObject();
 			JSONObject data = new JSONObject();
+			
+			 LocalDate currentDate = LocalDate.now();
 
 			String filePath = ""; // Initialize filePath variable
-			String fileName = docType + "_" + actfilename + "." + genType; // Construct file name based on docType
+			String fileName = currentDate + "_" + actfilename + "." + genType; // Construct file name based on docType
 																			// and filename
 
 			if ("DMS".equalsIgnoreCase(screenName)) {

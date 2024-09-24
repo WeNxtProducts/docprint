@@ -3,10 +3,13 @@ package com.wenxt.docprint.serviceImpl;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -16,15 +19,18 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import com.wenxt.docprint.model.LjmReportBuilder;
+import com.wenxt.docprint.model.LjmCommonRepConfig;
 import com.wenxt.docprint.model.ReportBuilderRequest;
-import com.wenxt.docprint.repo.ReportBuilderRepo;
-import com.wenxt.docprint.service.ReportBuilderService;
+import com.wenxt.docprint.repo.LjmCommonRepConfigRepo;
+import com.wenxt.docprint.service.ljmCommonRepConfigService;
 
 import jakarta.persistence.Column;
 
 @Service
-public class ReportBuilderServiceImpl implements ReportBuilderService {
+public class ljmCommonRepConfigServiceImpl implements ljmCommonRepConfigService {
+
+	@Autowired
+	private LjmCommonRepConfigRepo ljmcommonrepo;
 
 	@Value("${spring.message.code}")
 	private String messageCode;
@@ -41,27 +47,24 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 	@Value("${spring.error.code}")
 	private String errorCode;
 
-	@Autowired
-	private ReportBuilderRepo reportBuilderRepo;
-
 	@Override
-	public String createReportBuilder(ReportBuilderRequest reportBuilderRequest) {
+	public String ljmCommonRepConfigCreates(ReportBuilderRequest reportBuilderRequest) {
 		JSONObject response = new JSONObject();
 		JSONObject data = new JSONObject();
 
 		try {
-			LjmReportBuilder template = new LjmReportBuilder();
+			LjmCommonRepConfig comConfig = new LjmCommonRepConfig();
 
 			Map<String, Map<String, String>> fieldMaps = new HashMap<>();
 			fieldMaps.put("frontForm", reportBuilderRequest.getFrontForm().getFormFields());
 			for (Map.Entry<String, Map<String, String>> entry : fieldMaps.entrySet()) {
-				setreportBuilderFields(template, entry.getValue());
+				setCommonreportBuilderFields(comConfig, entry.getValue());
 			}
 
-			LjmReportBuilder savedTemplate = reportBuilderRepo.save(template);
+			LjmCommonRepConfig savedCommonconfig = ljmcommonrepo.save(comConfig);
 			response.put(statusCode, successCode);
 			response.put(messageCode, "Report Builder Details Created Successfully");
-			data.put("Id", savedTemplate.getRB_SYS_ID());
+			data.put("Id", savedCommonconfig.getREP_ID());
 			response.put("data", data);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -72,39 +75,72 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 		return response.toString();
 	}
 
-	private void setreportBuilderFields(LjmReportBuilder template, Map<String, String> value) throws Exception {
-		for (Map.Entry<String, String> entry : value.entrySet()) {
-			setReportBuilderField(template, entry.getKey(), entry.getValue());
+	private void setCommonreportBuilderFields(LjmCommonRepConfig comConfig, Map<String, String> fields)
+			throws Exception {
+		for (Map.Entry<String, String> entry : fields.entrySet()) {
+			setCommonreportBuilderField(comConfig, entry.getKey(), entry.getValue());
 		}
 	}
 
-	private void setReportBuilderField(LjmReportBuilder template, String key, String value) throws Exception {
+	private void setCommonreportBuilderField(LjmCommonRepConfig comConfig, String fieldName, String value)
+			throws Exception {
 		try {
-			Field field = LjmReportBuilder.class.getDeclaredField(key);
+			Field field = LjmCommonRepConfig.class.getDeclaredField(fieldName);
 			Class<?> fieldType = field.getType();
-			Object convertedValue = convertStringToObject(value, fieldType);
-			String setterMethodName = "set" + key;
+			Object convertedValue = null;
+			if (fieldType == LjmCommonRepConfig.class) {
+				convertedValue = getForeignObject(value);
+			} else {
+				convertedValue = convertStringToObject(value, fieldType);
+			}
+
+			String setterMethodName = "set" + fieldName;
 			if (value != null && !value.isEmpty()) {
-				Method setter = LjmReportBuilder.class.getMethod(setterMethodName, fieldType);
-				setter.invoke(template, convertedValue);
+				System.out.println(setterMethodName);
+				Method setter = LjmCommonRepConfig.class.getMethod(setterMethodName, fieldType);
+				setter.invoke(comConfig, convertedValue);
 			}
 		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
 		}
 	}
 
+	private LjmCommonRepConfig getForeignObject(String value) {
+		LjmCommonRepConfig setup = ljmcommonrepo.getById(Long.parseLong(value));
+		return setup;
+
+	}
+
 	private Object convertStringToObject(String value, Class<?> fieldType) {
 		if (fieldType.equals(Integer.class) && value.isEmpty() == false && value != null) {
 			return Integer.parseInt(value);
+		} else if (fieldType.equals(Long.class) && value != null && !value.isEmpty()) {
+			return Long.parseLong(value);
 		} else if (fieldType.equals(Double.class) && value.isEmpty() == false && value != null) {
 			return Double.parseDouble(value);
 		} else if (fieldType.equals(Short.class) && value.isEmpty() == false && value != null) {
 			return Short.parseShort(value);
 		} else if (fieldType.equals(LocalDateTime.class) && value.isEmpty() == false && value != null) {
 			return dateTimeConverter(value);
+		} else if (fieldType.equals(Date.class) && value.isEmpty() == false && value != null) {
+			return dateConverter(value);
 		} else {
 			return value;
 		}
+	}
+
+	private Object dateConverter(String value) {
+		String dateStr = value;
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Date date = null;
+		try {
+			date = sdf.parse(dateStr);
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+
+		return date;
 	}
 
 	private Object dateTimeConverter(String value) {
@@ -124,22 +160,22 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 	}
 
 	@Override
-	public String updateReportBuilder(ReportBuilderRequest reportBuilderRequest, Integer rbSysId) {
+	public String updateljmCommonRep(ReportBuilderRequest reportCommonRequest, Long rEP_SYS_ID) {
 		JSONObject response = new JSONObject();
 
 		try {
-			Integer reportBuilderId = rbSysId;
-			Optional<LjmReportBuilder> optionalUser = reportBuilderRepo.findById(reportBuilderId);
-			LjmReportBuilder claim = optionalUser.get();
-			if (claim != null) {
+			Long reportCommon = rEP_SYS_ID;
+			Optional<LjmCommonRepConfig> optionalUser = ljmcommonrepo.findById(reportCommon);
+			LjmCommonRepConfig comReport = optionalUser.get();
+			if (comReport != null) {
 				Map<String, Map<String, String>> fieldMaps = new HashMap<>();
-				fieldMaps.put("frontForm", reportBuilderRequest.getFrontForm().getFormFields());
+				fieldMaps.put("frontForm", reportCommonRequest.getFrontForm().getFormFields());
 				for (Map.Entry<String, Map<String, String>> entry : fieldMaps.entrySet()) {
-					setreportBuilderFields(claim, entry.getValue());
+					setCommonreportBuilderFields(comReport, entry.getValue());
 				}
 
 				try {
-					LjmReportBuilder savedClaimDetails = reportBuilderRepo.save(claim);
+					LjmCommonRepConfig savedRepConfig = ljmcommonrepo.save(comReport);
 					response.put(statusCode, successCode);
 					response.put(messageCode, "Report Builder Details Updated Successfully");
 				} catch (Exception e) {
@@ -157,38 +193,41 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 	}
 
 	@Override
-	public String deleteReportBuilder(Integer rbSysId) {
+	public String deleteljmCommonRep(Long rEP_SYS_ID) {
+
 		try {
-			Optional<LjmReportBuilder> optionalEntity = reportBuilderRepo.findById(rbSysId);
+			Optional<LjmCommonRepConfig> optionalEntity = ljmcommonrepo.findById(rEP_SYS_ID);
 
 			if (optionalEntity.isPresent()) {
-				reportBuilderRepo.deleteById(rbSysId);
+				ljmcommonrepo.deleteById(rEP_SYS_ID);
 
 				JSONObject response = new JSONObject();
 				response.put(statusCode, successCode);
-				response.put(messageCode, "Record with ID " + rbSysId + " deleted successfully");
+				response.put(messageCode, "Record with ID " + rEP_SYS_ID + " deleted successfully");
 				return response.toString();
 
 			} else {
 				JSONObject response = new JSONObject();
 				response.put(statusCode, errorCode);
-				response.put(messageCode, "Record with ID " + rbSysId + " not found");
+				response.put(messageCode, "Record with ID " + rEP_SYS_ID + " not found");
 				return response.toString();
 			}
 		} catch (Exception e) {
 			JSONObject response = new JSONObject();
 			response.put(statusCode, errorCode);
-			response.put(messageCode, "Error deleting record with ID " + rbSysId + ": " + e.getMessage());
+			response.put(messageCode, "Error deleting record with ID " + rEP_SYS_ID + ": " + e.getMessage());
 			return response.toString();
 		}
+
 	}
 
 	@Override
-	public String getReportBuilder(Integer rbSysId) throws Exception {
+	public String getReportBuilder(Long rEP_SYS_ID) throws Exception {
+
 		Map<String, Object> parametermap = new HashMap<String, Object>();
 		JSONObject inputObject = new JSONObject();
-		Optional<LjmReportBuilder> optionalUser = reportBuilderRepo.findById(rbSysId);
-		LjmReportBuilder claim = optionalUser.get();
+		Optional<LjmCommonRepConfig> optionalUser = ljmcommonrepo.findById(rEP_SYS_ID);
+		LjmCommonRepConfig claim = optionalUser.get();
 		if (claim != null) {
 			for (int i = 0; i < claim.getClass().getDeclaredFields().length; i++) {
 				Field field = claim.getClass().getDeclaredFields()[i];
@@ -205,6 +244,7 @@ public class ReportBuilderServiceImpl implements ReportBuilderService {
 		}
 		System.out.println(inputObject);
 		return inputObject.toString();
+
 	}
 
 }
