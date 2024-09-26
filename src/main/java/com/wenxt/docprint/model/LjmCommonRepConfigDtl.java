@@ -18,8 +18,8 @@ public class LjmCommonRepConfigDtl  {
 	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "LJM_COMMON_REG_CONFIG_DTLS_Seq")
     private Long SRNO;
 
-    @Column(name = "REP_ID")
-    private String REP_ID;
+    @Column(name = "REP_ID_DTL")
+    private String REP_ID_DTL;
 
     @Column(name = "PARAM_NAME")
     private String PARAM_NAME;
@@ -74,12 +74,12 @@ public class LjmCommonRepConfigDtl  {
 		SRNO = sRNO;
 	}
 
-	public String getREP_ID() {
-		return REP_ID;
+	public String getREP_ID_DTL() {
+		return REP_ID_DTL;
 	}
 
-	public void setREP_ID(String rEP_ID) {
-		REP_ID = rEP_ID;
+	public void setREP_ID_DTL(String rEP_ID_DTL) {
+		REP_ID_DTL = rEP_ID_DTL;
 	}
 
 	public String getPARAM_NAME() {

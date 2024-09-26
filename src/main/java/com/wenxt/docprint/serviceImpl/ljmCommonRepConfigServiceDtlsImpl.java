@@ -19,9 +19,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
+import com.wenxt.docprint.dto.ReportBuilderRequestDto;
+import com.wenxt.docprint.model.LjmCommonRepConfig;
 import com.wenxt.docprint.model.LjmCommonRepConfigDtl;
-import com.wenxt.docprint.model.ReportBuilderRequest;
 import com.wenxt.docprint.repo.LjmCommonRepConfigDtlsRepo;
+import com.wenxt.docprint.repo.LjmCommonRepConfigRepo;
 import com.wenxt.docprint.service.ljmCommonRepConfigDtlService;
 
 import jakarta.persistence.Column;
@@ -31,6 +33,9 @@ public class ljmCommonRepConfigServiceDtlsImpl implements ljmCommonRepConfigDtlS
 
 	@Autowired
 	private LjmCommonRepConfigDtlsRepo ljmcommonDtlsrepo;
+
+	@Autowired
+	private LjmCommonRepConfigRepo ljmcommonrepo;
 
 	@Value("${spring.message.code}")
 	private String messageCode;
@@ -48,25 +53,33 @@ public class ljmCommonRepConfigServiceDtlsImpl implements ljmCommonRepConfigDtlS
 	private String errorCode;
 
 	@Override
-	public String ljmCommonRepConfigDtlsCreates(ReportBuilderRequest reportBuilderRequest) {
+	public String createDocparam(ReportBuilderRequestDto reportBuilderRequest, Long SRNO) {
 
 		JSONObject response = new JSONObject();
 		JSONObject data = new JSONObject();
 
 		try {
-			LjmCommonRepConfigDtl comConfigDtls = new LjmCommonRepConfigDtl();
+			LjmCommonRepConfigDtl commonrepDtls = new LjmCommonRepConfigDtl();
 
 			Map<String, Map<String, String>> fieldMaps = new HashMap<>();
-			fieldMaps.put("frontForm", reportBuilderRequest.getFrontForm().getFormFields());
+			fieldMaps.put("frontForm", reportBuilderRequest.getLJM_COMMON_REP_CONFIG_DTL().getFormFields());
+
+			fieldMaps.get("frontForm").put("LjmCommonRepConfig", SRNO.toString());
+
 			for (Map.Entry<String, Map<String, String>> entry : fieldMaps.entrySet()) {
-				setCommonreportDtlsBuilderFields(comConfigDtls, entry.getValue());
+				setCommonRepDtlsFields(commonrepDtls, entry.getValue());
 			}
 
-			LjmCommonRepConfigDtl savedCommonconfigDtls = ljmcommonDtlsrepo.save(comConfigDtls);
-			response.put(statusCode, successCode);
-			response.put(messageCode, "Report Builder Details Created Successfully");
-			data.put("Id", savedCommonconfigDtls.getSRNO());
-			response.put("data", data);
+			try {
+				LjmCommonRepConfigDtl comrepdtls = ljmcommonDtlsrepo.save(commonrepDtls);
+				response.put(statusCode, successCode);
+				response.put(messageCode, "common details config added successfully");
+				data.put("Id", comrepdtls.getREP_ID_DTL());
+				response.put("data", data);
+			} catch (Exception e) {
+				response.put(statusCode, errorCode);
+				response.put(messageCode, "An error occurred: " + e.getMessage());
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 			response.put("statusCode", errorCode);
@@ -77,38 +90,73 @@ public class ljmCommonRepConfigServiceDtlsImpl implements ljmCommonRepConfigDtlS
 
 	}
 
-	private void setCommonreportDtlsBuilderFields(LjmCommonRepConfigDtl comConfigdtls, Map<String, String> fields)
+	@Override
+	public String updateDocparam(ReportBuilderRequestDto reportBuilderRequest, Long SRNO) {
+		JSONObject response = new JSONObject();
+
+		try {
+			Long srno = SRNO;
+			Optional<LjmCommonRepConfigDtl> optionalcomconfig = ljmcommonDtlsrepo.findById(srno);
+
+			if (optionalcomconfig.isPresent()) {
+				LjmCommonRepConfigDtl docprintparam = optionalcomconfig.get();
+
+				// Assuming `getFrontForm()` returns an object with a method `getFormFields()`
+				// which returns a Map<String, String>
+				Map<String, Map<String, String>> fieldMaps = new HashMap<>();
+				fieldMaps.put("frontForm", reportBuilderRequest.getLJM_COMMON_REP_CONFIG_DTL().getFormFields());
+
+				for (Map.Entry<String, Map<String, String>> entry : fieldMaps.entrySet()) {
+					setCommonRepDtlsFields(docprintparam, entry.getValue());
+				}
+
+				ljmcommonDtlsrepo.save(docprintparam);
+				response.put(statusCode, successCode);
+				response.put(messageCode, "Common Report config details Updated Successfully");
+			} else {
+				response.put(statusCode, errorCode);
+				response.put(messageCode, "Common Report with the provided ID not found");
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			response.put(statusCode, errorCode);
+			response.put(messageCode, "An error occurred: " + e.getMessage());
+		}
+
+		return response.toString();
+	}
+
+	private void setCommonRepDtlsFields(LjmCommonRepConfigDtl commonrepDtls, Map<String, String> fields)
 			throws Exception {
 		for (Map.Entry<String, String> entry : fields.entrySet()) {
-			setCommonreportDtlsBuilderField(comConfigdtls, entry.getKey(), entry.getValue());
+			setCommonRepDtlsField(commonrepDtls, entry.getKey(), entry.getValue());
 		}
 	}
 
-	private void setCommonreportDtlsBuilderField(LjmCommonRepConfigDtl comConfigdtls, String fieldName, String value)
-			throws Exception {
+	private void setCommonRepDtlsField(LjmCommonRepConfigDtl user, String fieldName, String value) throws Exception {
 		try {
 			Field field = LjmCommonRepConfigDtl.class.getDeclaredField(fieldName);
 			Class<?> fieldType = field.getType();
 			Object convertedValue = null;
-			if (fieldType == LjmCommonRepConfigDtl.class) {
+			if (fieldType == LjmCommonRepConfig.class) {
 				convertedValue = getForeignObject(value);
 			} else {
 				convertedValue = convertStringToObject(value, fieldType);
 			}
-//			Object convertedValues = convertStringToObject(value, fieldType);
+//			Object convertedValue = convertStringToObject(value, fieldType);
 			String setterMethodName = "set" + fieldName;
 			if (value != null && !value.isEmpty()) {
-
+				System.out.println(setterMethodName);
 				Method setter = LjmCommonRepConfigDtl.class.getMethod(setterMethodName, fieldType);
-				setter.invoke(comConfigdtls, convertedValue);
+				setter.invoke(user, convertedValue);
 			}
 		} catch (NoSuchFieldException e) {
 			e.printStackTrace();
 		}
 	}
 
-	private LjmCommonRepConfigDtl getForeignObject(String value) {
-		LjmCommonRepConfigDtl setup = ljmcommonDtlsrepo.getById(Long.parseLong(value));
+	private LjmCommonRepConfig getForeignObject(String value) {
+		LjmCommonRepConfig setup = ljmcommonrepo.getById(Long.parseLong(value));
 		return setup;
 
 	}
@@ -138,7 +186,7 @@ public class ljmCommonRepConfigServiceDtlsImpl implements ljmCommonRepConfigDtlS
 		try {
 			date = sdf.parse(dateStr);
 		} catch (ParseException e) {
-
+			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 
@@ -159,41 +207,6 @@ public class ljmCommonRepConfigServiceDtlsImpl implements ljmCommonRepConfigDtlS
 		DateTimeFormatter formatters = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 		LocalDateTime parsedDateTime = LocalDateTime.parse(formattedDateTime, formatters);
 		return parsedDateTime;
-	}
-
-	@Override
-	public String updateljmCommonRepDtls(ReportBuilderRequest reportBuilderDtlsRequest, Long sRNO) {
-
-		JSONObject response = new JSONObject();
-
-		try {
-			Long reportCommon = sRNO;
-			Optional<LjmCommonRepConfigDtl> optionalUser = ljmcommonDtlsrepo.findById(reportCommon);
-			LjmCommonRepConfigDtl comReportdtls = optionalUser.get();
-			if (comReportdtls != null) {
-				Map<String, Map<String, String>> fieldMaps = new HashMap<>();
-				fieldMaps.put("frontForm", reportBuilderDtlsRequest.getFrontForm().getFormFields());
-				for (Map.Entry<String, Map<String, String>> entry : fieldMaps.entrySet()) {
-					setCommonreportDtlsBuilderFields(comReportdtls, entry.getValue());
-				}
-
-				try {
-					LjmCommonRepConfigDtl savedRepConfig = ljmcommonDtlsrepo.save(comReportdtls);
-					response.put(statusCode, successCode);
-					response.put(messageCode, "Report Builder Details Updated Successfully");
-				} catch (Exception e) {
-					response.put("statusCode", errorCode);
-					response.put("message", "An error occurred: " + e.getMessage());
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-			response.put("statusCode", errorCode);
-			response.put("message", "An error occurred: " + e.getMessage());
-		}
-
-		return response.toString();
-
 	}
 
 	@Override

@@ -64,7 +64,8 @@ public class ljmCommonRepConfigServiceImpl implements ljmCommonRepConfigService 
 			LjmCommonRepConfig savedCommonconfig = ljmcommonrepo.save(comConfig);
 			response.put(statusCode, successCode);
 			response.put(messageCode, "Report Builder Details Created Successfully");
-			data.put("Id", savedCommonconfig.getREP_ID());
+			data.put("tranId", savedCommonconfig.getREP_ID());
+			data.put("Id", savedCommonconfig.getREP_SYS_ID());
 			response.put("data", data);
 		} catch (Exception e) {
 			e.printStackTrace();

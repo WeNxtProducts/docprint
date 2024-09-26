@@ -1,15 +1,15 @@
 package com.wenxt.docprint.service;
 
-import com.wenxt.docprint.model.ReportBuilderRequest;
+import com.wenxt.docprint.dto.ReportBuilderRequestDto;
 
 public interface ljmCommonRepConfigDtlService {
-
-	String ljmCommonRepConfigDtlsCreates(ReportBuilderRequest reportBuilderRequest);
-
-	String updateljmCommonRepDtls(ReportBuilderRequest reportBuilderRequest, Long sRNO);
 
 	String deleteljmCommonRepDtls(Long sRNO);
 
 	String getReportBuilderDtls(Long sRNO) throws Exception;
+
+	String createDocparam(ReportBuilderRequestDto reportBuilderRequest, Long sRNO);
+
+	String updateDocparam(ReportBuilderRequestDto reportBuilderRequest, Long sRNO);
 
 }

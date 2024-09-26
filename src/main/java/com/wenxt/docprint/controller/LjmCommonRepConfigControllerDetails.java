@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.wenxt.docprint.model.ReportBuilderRequest;
+import com.wenxt.docprint.dto.ReportBuilderRequestDto;
 import com.wenxt.docprint.service.ljmCommonRepConfigDtlService;
 
 @RestController
@@ -18,19 +18,16 @@ public class LjmCommonRepConfigControllerDetails {
 	@Autowired
 	private ljmCommonRepConfigDtlService repconfigDtlService;
 
-	@PostMapping("/create")
-	private String ljmCommonRepConfigCreates(@RequestBody ReportBuilderRequest reportBuilderRequest) {
-		try {
-			return repconfigDtlService.ljmCommonRepConfigDtlsCreates(reportBuilderRequest);
-		} catch (Exception e) {
-			return e.getMessage();
-		}
+	@PostMapping("/create/{SRNO}")
+	private String ljmCommonRepConfigCreates(@RequestBody ReportBuilderRequestDto reportBuilderRequest,
+			@PathVariable Long SRNO) {
+		return repconfigDtlService.createDocparam(reportBuilderRequest, SRNO);
 	}
 
-	@PostMapping("/update/{SRNO}")
-	private String updateljmCommonRepDtls(@RequestBody ReportBuilderRequest reportBuilderRequest,
+	@PostMapping("/updateDocparam/{SRNO}")
+	private String updateljmCommonRepDtls(@RequestBody ReportBuilderRequestDto reportBuilderRequest,
 			@PathVariable Long SRNO) {
-		return repconfigDtlService.updateljmCommonRepDtls(reportBuilderRequest, SRNO);
+		return repconfigDtlService.updateDocparam(reportBuilderRequest, SRNO);
 	}
 
 	@PostMapping("/delete/{SRNO}")
