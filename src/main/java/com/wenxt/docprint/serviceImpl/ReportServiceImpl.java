@@ -338,7 +338,6 @@ public class ReportServiceImpl implements ReportService {
 				JasperReport jasperReport;
 				try {
 					jasperReport = JasperCompileManager.compileReport(location);
-					System.out.println(jasperReport);
 				} catch (JRException e) {
 					throw new RuntimeException("Failed to compile JRXML file at location: " + location, e);
 				}
@@ -358,8 +357,6 @@ public class ReportServiceImpl implements ReportService {
 
 				Connection conn = null;
 				conn = DriverManager.getConnection("jdbc:oracle:thin:@192.168.1.80:1521:orcl", "LIFE_DEV", "LIFE_DEV");
-
-				System.out.println("PARAMETER: " + parameters);
 				JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
 
 				// Export to PDF

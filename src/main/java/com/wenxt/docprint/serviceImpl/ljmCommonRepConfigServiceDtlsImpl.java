@@ -143,10 +143,8 @@ public class ljmCommonRepConfigServiceDtlsImpl implements ljmCommonRepConfigDtlS
 			} else {
 				convertedValue = convertStringToObject(value, fieldType);
 			}
-//			Object convertedValue = convertStringToObject(value, fieldType);
 			String setterMethodName = "set" + fieldName;
 			if (value != null && !value.isEmpty()) {
-				System.out.println(setterMethodName);
 				Method setter = LjmCommonRepConfigDtl.class.getMethod(setterMethodName, fieldType);
 				setter.invoke(user, convertedValue);
 			}

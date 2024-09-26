@@ -99,7 +99,6 @@ public class LjmRepwhereServiceimpl implements LjmRepwhereService {
 
 			String setterMethodName = "set" + fieldName;
 			if (value != null && !value.isEmpty()) {
-				System.out.println(setterMethodName);
 				Method setter = LjmCommonRepConfig.class.getMethod(setterMethodName, fieldType);
 				setter.invoke(comrepWhere, convertedValue);
 			}
@@ -249,7 +248,6 @@ public class LjmRepwhereServiceimpl implements LjmRepwhereService {
 				}
 			}
 		}
-		System.out.println(inputObject);
 		return inputObject.toString();
 
 	}

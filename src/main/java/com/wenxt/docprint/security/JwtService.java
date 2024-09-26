@@ -75,7 +75,6 @@ public class JwtService {
 		if (authHeader != null && authHeader.startsWith("Bearer ")) {
 			// Extract the token by removing "Bearer " prefix
 			String token = authHeader.substring(7);
-			System.out.println(token);
 			return token;
 		}
 

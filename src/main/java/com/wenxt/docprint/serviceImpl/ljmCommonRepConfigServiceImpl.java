@@ -97,7 +97,6 @@ public class ljmCommonRepConfigServiceImpl implements ljmCommonRepConfigService 
 
 			String setterMethodName = "set" + fieldName;
 			if (value != null && !value.isEmpty()) {
-				System.out.println(setterMethodName);
 				Method setter = LjmCommonRepConfig.class.getMethod(setterMethodName, fieldType);
 				setter.invoke(comConfig, convertedValue);
 			}
@@ -243,7 +242,6 @@ public class ljmCommonRepConfigServiceImpl implements ljmCommonRepConfigService 
 				}
 			}
 		}
-		System.out.println(inputObject);
 		return inputObject.toString();
 
 	}
