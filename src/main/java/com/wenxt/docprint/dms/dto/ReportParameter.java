@@ -6,6 +6,15 @@ public class ReportParameter {
 	private String param_DataType;
 	private String param_Field_Required;
 	private String param_Field_Order;
+	private String param_query_id;
+
+	public String getParam_query_id() {
+		return param_query_id;
+	}
+
+	public void setParam_query_id(String param_query_id) {
+		this.param_query_id = param_query_id;
+	}
 
 	public String getParam_RepColunmName() {
 		return param_RepColunmName;
@@ -46,7 +55,5 @@ public class ReportParameter {
 	public void setParam_Field_Order(String param_Field_Order) {
 		this.param_Field_Order = param_Field_Order;
 	}
-
-	
 
 }
