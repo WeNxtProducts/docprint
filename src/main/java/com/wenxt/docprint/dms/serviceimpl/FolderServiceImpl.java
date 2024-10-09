@@ -296,9 +296,9 @@ public class FolderServiceImpl implements FolderService {
 			
 			 LocalDate currentDate = LocalDate.now();
 
-			String filePath = ""; // Initialize filePath variable
-			String fileName = currentDate + "_" + actfilename + "." + genType; // Construct file name based on docType
-																			// and filename
+			String filePath = ""; 
+			String fileName = currentDate + "_" + actfilename + "." + genType; 
+																			
 
 			if ("DMS".equalsIgnoreCase(screenName)) {
 
@@ -310,14 +310,14 @@ public class FolderServiceImpl implements FolderService {
 				}
 			}
 
-//			if ("Y".equalsIgnoreCase(replaceFlag)) {
-//			
-//				filePath = updateFileVersionArray(filePath, docModule);
-//			}
-			// Save file details and get generated ID
+			if ("Y".equalsIgnoreCase(replaceFlag)) {
+			
+				filePath = updateFileVersionArray(filePath, docModule);
+			}
+			
 			String genid = saveFileDetails(fileName, docModule, tranId, docType, filePath);
 
-			// Upload the file
+			
 			uploadFileArray(byteArray, filePath);
 
 			data.put("filePath", filePath);
@@ -366,13 +366,13 @@ public class FolderServiceImpl implements FolderService {
 		int dotIndex = fileName.lastIndexOf('.');
 		if (dotIndex > 0) {
 			baseName = fileName.substring(0, dotIndex);
-			extension = fileName.substring(dotIndex); // Include the dot in the extension
+			extension = fileName.substring(dotIndex); 
 		}
 
 		String directoryPath = directory + File.separator + docModule;
 		File moduleDirectory = new File(directoryPath);
 		if (!moduleDirectory.exists()) {
-			moduleDirectory.mkdirs(); // Create the directory if it does not exist
+			moduleDirectory.mkdirs(); 
 		}
 
 		int version = 1;
