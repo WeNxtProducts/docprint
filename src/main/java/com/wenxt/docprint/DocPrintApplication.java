@@ -12,8 +12,10 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-@SpringBootApplication
+import io.swagger.v3.oas.annotations.OpenAPIDefinition;
 
+@SpringBootApplication
+@OpenAPIDefinition
 @Configuration
 
 @PropertySource("classpath:Properties/common_msgs.properties")
@@ -37,9 +39,9 @@ public class DocPrintApplication {
 		};
 	}
 
-	 @Bean
-	    public NamedParameterJdbcTemplate namedParameterJdbcTemplate(DataSource dataSource) {
-	        return new NamedParameterJdbcTemplate(dataSource);
-	    }
-	
+	@Bean
+	public NamedParameterJdbcTemplate namedParameterJdbcTemplate(DataSource dataSource) {
+		return new NamedParameterJdbcTemplate(dataSource);
+	}
+
 }
