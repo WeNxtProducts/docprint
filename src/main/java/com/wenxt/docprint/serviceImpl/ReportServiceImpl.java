@@ -98,6 +98,10 @@ public class ReportServiceImpl implements ReportService {
 
 	@Value("${spring.aicbase.url}")
 	private String aicbase;
+
+	@Value("${query.selectDocPrintSetup}")
+	private String selectDocPrintSetupQuery;
+
 	@Autowired
 	private LjmdocPrinsetup lrmdocrprintRepository;
 
@@ -123,6 +127,15 @@ public class ReportServiceImpl implements ReportService {
 	@Value("${ImgDocBasePath}")
 	private String ImgDocBasePath;
 
+	@Value("${spring.datasource.url}")
+	private String dbUrl;
+
+	@Value("${spring.datasource.username}")
+	private String dbUsername;
+
+	@Value("${spring.datasource.password}")
+	private String dbPassword;
+
 	@Override
 	public String generatedocument(HttpServletRequest request) throws JRException {
 		try {
@@ -137,8 +150,8 @@ public class ReportServiceImpl implements ReportService {
 			String tranId = (String) inputMap.get("tranId");
 
 			String sysID = (String) inputMap.get("sysId");
-			String sqlQuery = "SELECT dps_sysid FROM ljm_docprint_setup WHERE dps_template_name = ?";
-			Long dpsSysid = jdbcTemplate.queryForObject(sqlQuery, Long.class, docTemplateName);
+
+			Long dpsSysid = jdbcTemplate.queryForObject(selectDocPrintSetupQuery, Long.class, docTemplateName);
 
 			Date currentDate = new Date();
 			SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss");
@@ -168,13 +181,9 @@ public class ReportServiceImpl implements ReportService {
 				}
 
 				if ("Q".equalsIgnoreCase(paramType.trim())) {
-
-					// Create a Map for named parameters
 					MapSqlParameterSource parameters = new MapSqlParameterSource();
 					parameters.addValue("tranId", tranId);
 					parameters.addValue("sysId", sysID);
-
-					// Execute the query with the named parameters
 					List<Map<String, Object>> queryResult = namedParameterJdbcTemplate.query(param.getDPP_VALUE(),
 							parameters, new ColumnMapRowMapper());
 
@@ -346,17 +355,14 @@ public class ReportServiceImpl implements ReportService {
 				Map<String, Object> parameters = new HashMap<>(dataMap);
 				parameters.put("WATERMARK_IMAGE", "path/to/watermark/image.png");
 
-//				parameters.putAll(docParms);
-
 				Map<String, Object> parammMap = new HashMap<>();
-//				parammMap.put("param", 1001);
-//				parammMap.put("tranId", 3);
+
 				JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(
 						Collections.singletonList(parameters));
-//				parameters.put("param", 1001);
 
-				Connection conn = null;
-				conn = DriverManager.getConnection("jdbc:oracle:thin:@192.168.1.80:1521:orcl", "LIFE_DEV", "LIFE_DEV");
+				// Establish the database connection
+				Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
+
 				JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
 
 				// Export to PDF
