@@ -325,6 +325,7 @@ public class FolderServiceImpl implements FolderService {
 			data.put(tranIdProperty, tranId);
 			data.put("DocType", docType);
 			data.put("doc_sys_id", genid);
+			data.put("fileName", actfilename);
 			response.put(statusCode, successCode);
 			response.put(messageCode, "File Uploaded successfully");
 			response.put(dataCode, data);
