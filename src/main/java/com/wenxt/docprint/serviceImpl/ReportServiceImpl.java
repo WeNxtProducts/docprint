@@ -267,6 +267,13 @@ public class ReportServiceImpl implements ReportService {
 				}
 
 				context = setimages(inJson, context);
+
+				for (Map.Entry<String, Object> entry : dataMap.entrySet()) {
+					if (entry.getValue() == null) {
+						entry.setValue("");
+					}
+				}
+
 				context.put("Head", dataMap);
 
 				String docxOutputFileName = XdocBasePath + docTemplateName + formattedDate + ".docx";
