@@ -157,13 +157,17 @@ public class FolderServiceImpl implements FolderService {
 		return response.toString();
 	}
 
-	public String saveFileDetails(String filename, String module, String tranId, String docType, String filePath) {
+	public String saveFileDetails(String filename, String module, String tranId, String docType, String filePath,
+			String param1, String param2) {
 		LjmFileAttributes fileDetails = new LjmFileAttributes();
 		fileDetails.setFileName(filename);
 		fileDetails.setDocModule(module);
 		fileDetails.setTranId(tranId);
 		fileDetails.setDocType(docType);
 		fileDetails.setFilePath(filePath);
+		fileDetails.setAddl1(param1);
+		fileDetails.setAddl2(param2);
+		;
 		fileDetails.setStatus("Y");
 
 		LjmFileAttributes savedFileDetails = filerepo.save(fileDetails);
@@ -290,15 +294,16 @@ public class FolderServiceImpl implements FolderService {
 			String dms_status = (String) fileRequest.get("dms_status");
 			String screenName = (String) fileRequest.get("screenName");
 			String uploadscrn = (String) fileRequest.get("uploadscrn");
+			String param1 = (String) fileRequest.get("param_add1");
+			String param2 = (String) fileRequest.get("param_add2");
 
 			JSONObject response = new JSONObject();
 			JSONObject data = new JSONObject();
-			
-			 LocalDate currentDate = LocalDate.now();
 
-			String filePath = ""; 
-			String fileName = currentDate + "_" + actfilename + "." + genType; 
-																			
+			LocalDate currentDate = LocalDate.now();
+
+			String filePath = "";
+			String fileName = currentDate + "_" + actfilename + "." + genType;
 
 			if ("DMS".equalsIgnoreCase(screenName)) {
 
@@ -311,13 +316,12 @@ public class FolderServiceImpl implements FolderService {
 			}
 
 			if ("Y".equalsIgnoreCase(replaceFlag)) {
-			
+
 				filePath = updateFileVersionArray(filePath, docModule);
 			}
-			
-			String genid = saveFileDetails(fileName, docModule, tranId, docType, filePath);
 
-			
+			String genid = saveFileDetails(fileName, docModule, tranId, docType, filePath, param1, param2);
+
 			uploadFileArray(byteArray, filePath);
 
 			data.put("filePath", filePath);
@@ -367,13 +371,13 @@ public class FolderServiceImpl implements FolderService {
 		int dotIndex = fileName.lastIndexOf('.');
 		if (dotIndex > 0) {
 			baseName = fileName.substring(0, dotIndex);
-			extension = fileName.substring(dotIndex); 
+			extension = fileName.substring(dotIndex);
 		}
 
 		String directoryPath = directory + File.separator + docModule;
 		File moduleDirectory = new File(directoryPath);
 		if (!moduleDirectory.exists()) {
-			moduleDirectory.mkdirs(); 
+			moduleDirectory.mkdirs();
 		}
 
 		int version = 1;
@@ -431,7 +435,7 @@ public class FolderServiceImpl implements FolderService {
 			if (updatedCount == intDocsysIds.size()) {
 				data.put("doc_sys_id", docsysIds);
 				response.put(statusCode, successCode);
-				response.put(messageCode, "Given ID(s) status have been updated successfully");
+				response.put(messageCode, "Given ID(s) status have been deleted successfully");
 				response.put(dataCode, data);
 			} else {
 
@@ -469,5 +473,118 @@ public class FolderServiceImpl implements FolderService {
 			throw e;
 		}
 	}
+
+	public String uploadMultipleDocuments(List<Map<String, Object>> fileRequests) {
+		JSONArray fileResponses = new JSONArray();
+		JSONObject overallResponse = new JSONObject();
+		for (Map<String, Object> fileRequest : fileRequests) {
+			try {
+				String base64String = (String) fileRequest.get("base64String");
+				byte[] byteArray = Base64.getDecoder().decode(base64String);
+
+				String docModule = (String) fileRequest.get("module");
+				String tranId = (String) fileRequest.get("TranId");
+				String docType = (String) fileRequest.get("DocType");
+				String replaceFlag = (String) fileRequest.get("replaceFlag");
+				String actfilename = (String) fileRequest.get("filename");
+				String genType = (String) fileRequest.get("genType");
+				String dmsStatus = (String) fileRequest.get("dms_status");
+				String screenName = (String) fileRequest.get("screenName");
+				String uploadscrn = (String) fileRequest.get("uploadscrn");
+				String param1 = (String) fileRequest.get("param_add1");
+				String param2 = (String) fileRequest.get("param_add2");
+				String description = (String) fileRequest.get("description");
+
+				JSONObject response = new JSONObject();
+				JSONObject data = new JSONObject();
+
+				String timestamp = String.valueOf(System.currentTimeMillis());
+				String filePath = "";
+				String fileName = actfilename + "_" + timestamp + "." + genType;
+
+				if ("DMS".equalsIgnoreCase(screenName)) {
+					Optional<String> pcDescOptional = lmrepo.findPcDescByPcTypeAndPcCode(screenName, uploadscrn);
+					if (pcDescOptional.isPresent()) {
+						String pcDesc = pcDescOptional.get();
+						filePath = pcDesc + fileName;
+					}
+				}
+
+				// Handle file version replacement
+				if ("Y".equalsIgnoreCase(replaceFlag)) {
+					filePath = updateFileVersionArray(filePath, docModule);
+				}
+				String genid = saveFileDetails(fileName, docModule, tranId, docType, filePath, param1, param2);
+
+				uploadFileArray(byteArray, filePath);
+				data.put("filePath", filePath);
+				data.put(dmsStatusProperty, "Y");
+				data.put(tranIdProperty, tranId);
+				data.put("DocType", docType);
+				data.put("doc_sys_id", genid);
+				data.put("filename", actfilename);
+				response.put(statusCode, successCode);
+				response.put(messageCode, "File Uploaded successfully");
+				response.put(dataCode, data);
+
+				fileResponses.put(response);
+
+			} catch (Exception e) {
+				e.printStackTrace();
+
+				JSONObject errorResponse = new JSONObject();
+				errorResponse.put(statusCode, errorCode);
+				errorResponse.put(messageCode, e.getMessage());
+				fileResponses.put(errorResponse);
+			}
+		}
+
+		overallResponse.put(overallCode, fileResponses);
+		return overallResponse.toString();
+	}
+
+	public List<String> getFileBase64Strings(List<String> filePaths) throws IOException {
+		List<String> base64List = new ArrayList<>();
+
+		for (String filePath : filePaths) {
+			File file = new File(filePath);
+
+			if (!file.exists()) {
+				throw new IOException("File not found: " + filePath);
+			}
+
+			byte[] byteArray = Files.readAllBytes(Paths.get(filePath));
+			String base64String = byteArrayToBase64(byteArray);
+			base64List.add(base64String);
+		}
+
+		return base64List;
+	}
+
+	private String byteArrayToBase64(byte[] byteArray) {
+		return Base64.getEncoder().encodeToString(byteArray);
+	}
+
+	@Override
+	public String editFiles(Long docSysId, String param_add1) {
+        JSONObject response = new JSONObject();
+        Optional<LjmFileAttributes> fileOptional = filerepo.findById(docSysId);
+
+        if (fileOptional.isPresent()) {
+            LjmFileAttributes file = fileOptional.get();
+
+            file.setAddl1(param_add1);
+            filerepo.save(file);
+            
+            response.put(statusCode, successCode);
+            response.put(messageCode, "File with ID" + docSysId + "is updated successfully");
+        } else {
+            
+            response.put(statusCode, errorCode);
+            response.put(messageCode, "File with ID " + docSysId + "is not found");
+        }
+
+        return response.toString(); 
+    }
 
 }

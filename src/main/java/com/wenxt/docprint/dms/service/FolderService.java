@@ -26,4 +26,10 @@ public interface FolderService {
 
 	Map<String, Object> deleteFiles(List<String> docsysIds);
 
+	String uploadMultipleDocuments(List<Map<String, Object>> fileRequests);
+
+	List<String> getFileBase64Strings(List<String> paths) throws IOException;
+
+	String editFiles(Long docSysId, String param_add1);
+
 }

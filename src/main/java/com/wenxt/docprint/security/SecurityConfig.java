@@ -99,24 +99,6 @@ public class SecurityConfig {
 		return config.getAuthenticationManager(); 
 	} 
 
-	  @Bean
-	    public DataSource dataSource() {
-	        DriverManagerDataSource dataSource = new DriverManagerDataSource();
-	        dataSource.setDriverClassName("oracle.jdbc.OracleDriver");
-	        dataSource.setUrl("jdbc:oracle:thin:@//192.168.1.80:1521/orcl");
-	        dataSource.setUsername("LIFE_DEV");
-	        dataSource.setPassword("LIFE_DEV");
-	        return dataSource;
-	    }
-
-	  
-
-
-//	
-//	    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-//	        registry.addResourceHandler("/files/**")
-//	                .addResourceLocations("file:" + baseDirectory);
-//	    }
 	    protected void configure(HttpSecurity http) throws Exception {
 	        http
 	            .authorizeRequests(authorizeRequests ->

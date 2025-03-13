@@ -92,5 +92,38 @@ public class FolderController {
 		Map<String, Object> result = folderService.deleteFiles(docsysIds);
 		return ResponseEntity.ok(result);
 	}
+	
+	@PostMapping("/new/uploadMultiple")
+	public ResponseEntity<String> uploadMultipleDocuments(@RequestBody List<Map<String, Object>> fileRequests) {
+		try {
+			String response = folderService.uploadMultipleDocuments(fileRequests);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			e.printStackTrace();
+			return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error processing file upload.");
+		}
+	}
+	
+	@PostMapping("/retrieve")
+	public ResponseEntity<Map<String, Object>> retriveFiles(@RequestBody List<Map<String, String>> filePaths)
+	        throws IOException {
+	    Map<String, Object> response = new HashMap<>();
+	    List<String> paths = filePaths.stream().map(filePathMap -> filePathMap.get("path")).toList();
+	    List<String> base64List = folderService.getFileBase64Strings(paths);
 
+	    
+	    response.put("status", "SUCCESS");
+	    response.put("status_msg", "Files processed successfully");
+	    response.put("base64Strings", base64List);  
+	    return ResponseEntity.ok(response);
+	}
+	
+	@PostMapping("/editFiles")
+	public ResponseEntity<String> editFiles(@RequestBody Map<String, Object> request) {
+
+		Long docSysId = Long.valueOf(request.get("doc_sys_id").toString());
+		String param_add1 = request.get("param_add1").toString();
+		String result = folderService.editFiles(docSysId, param_add1);
+		return ResponseEntity.ok(result);
+	}
 }
