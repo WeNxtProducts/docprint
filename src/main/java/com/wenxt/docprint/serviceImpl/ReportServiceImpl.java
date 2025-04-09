@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.text.SimpleDateFormat;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
@@ -224,7 +225,6 @@ public class ReportServiceImpl implements ReportService {
 						File file = new File(ImgDocBasePath + inJson.getJSONObject("images").getString(key));
 						if (!file.exists()) {
 							System.out.println("Image file not found: " + file.getAbsolutePath());
-
 						}
 						metadata.addFieldAsImage(key);
 					}
@@ -261,7 +261,6 @@ public class ReportServiceImpl implements ReportService {
 						context.put("qrcode", new FileImageProvider(new File(qrCodeLocation)));
 
 					} catch (Exception e) {
-
 						return e.getMessage();
 					}
 				}
@@ -299,41 +298,40 @@ public class ReportServiceImpl implements ReportService {
 				} catch (Exception e) {
 					throw new RuntimeException("Error converting DOCX to PDF: " + pdfOutputFileName, e);
 				}
-
-				byte[] pdfBytes;
-				try (InputStream pdfInputStream = new FileInputStream(pdfOutputFileName)) {
-					pdfBytes = IOUtils.toByteArray(pdfInputStream);
+				String pdfBase64 = null;
+				try (InputStream pdfInputStream = new FileInputStream(pdfOutputFileName);
+						ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
+					IOUtils.copy(pdfInputStream, pdfOutputStream);
+					byte[] pdfBytes = pdfOutputStream.toByteArray();
+					pdfBase64 = Base64.getEncoder().encodeToString(pdfBytes); // Convert byte array to Base64
 				} catch (IOException e) {
 					throw new RuntimeException("Error reading PDF file: " + pdfOutputFileName, e);
 				}
-
 				response.put(statusCode, successCode);
 				response.put(messageCode, "Xdoc report generated successfully");
-				data.put(attachmentCode, pdfBytes);
+				data.put(attachmentCode, pdfBase64); 
 				response.put(dataCode, data);
 
 				return response.toString();
 			}
 
 			else if ("Static".equalsIgnoreCase(reportType)) {
-				// Generate static report
 				Optional<String> fileLocation = getFileLocationByTemplateName(docTemplateName);
 
 				if (!fileLocation.isPresent()) {
 					return new JSONObject().put(statusCode, errorCode)
 							.put(messageCode, "Template not found for name: " + docTemplateName).toString();
 				}
-
 				byte[] pdfBytes = readPdfFile(fileLocation.get());
-
 				try {
 					String outputFilePath = Staticpath + docTemplateName + ".pdf";
 					Files.write(Paths.get(outputFilePath), pdfBytes);
+					String pdfBase64 = Base64.getEncoder().encodeToString(pdfBytes);
 					response.put(statusCode, successCode);
 					response.put(messageCode, "Static report generated and saved successfully");
-
-					data.put(attachmentCode, pdfBytes);
+					data.put(attachmentCode, pdfBase64);
 					response.put(dataCode, data);
+
 				} catch (IOException e) {
 					return new JSONObject().put(statusCode, errorCode)
 							.put(messageCode, "Failed to save the report: " + e.getMessage()).toString();
@@ -341,7 +339,6 @@ public class ReportServiceImpl implements ReportService {
 			}
 
 			else if ("JASPER".equalsIgnoreCase(reportType)) {
-				// Generate Jasper report
 				String location = setup.getDPS_TEMP_LOC();
 				String pdfOutputPath = Jasperpath + docTemplateName + formattedDate + ".pdf";
 				String xlsxOutputPath = Jasperpath + docTemplateName + formattedDate + ".xlsx";
@@ -357,8 +354,6 @@ public class ReportServiceImpl implements ReportService {
 				} catch (JRException e) {
 					throw new RuntimeException("Failed to compile JRXML file at location: " + location, e);
 				}
-
-				// Set parameters, including watermark image
 				Map<String, Object> parameters = new HashMap<>(dataMap);
 				parameters.put("WATERMARK_IMAGE", "path/to/watermark/image.png");
 
@@ -366,13 +361,9 @@ public class ReportServiceImpl implements ReportService {
 
 				JRBeanCollectionDataSource dataSource = new JRBeanCollectionDataSource(
 						Collections.singletonList(parameters));
-
-				// Establish the database connection
 				Connection conn = DriverManager.getConnection(dbUrl, dbUsername, dbPassword);
 
 				JasperPrint jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, conn);
-
-				// Export to PDF
 				try {
 					JasperExportManager.exportReportToPdfFile(jasperPrint, pdfOutputPath);
 				} catch (JRException e) {
@@ -393,27 +384,34 @@ public class ReportServiceImpl implements ReportService {
 					throw new RuntimeException("Failed to export report to XLSX", e);
 				}
 
-				// Read PDF and XLSX files into byte arrays
-				byte[] pdfBytes;
-				byte[] xlsxBytes;
+				// Convert PDF to Base64
+				String pdfBase64 = null;
 				try (FileInputStream pdfInputStream = new FileInputStream(pdfOutputPath);
-						FileInputStream xlsxInputStream = new FileInputStream(xlsxOutputPath);
-						ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream();
-						ByteArrayOutputStream xlsxOutputStream = new ByteArrayOutputStream()) {
+						ByteArrayOutputStream pdfOutputStream = new ByteArrayOutputStream()) {
 
-					// Read PDF bytes
 					int pdfByte;
 					while ((pdfByte = pdfInputStream.read()) != -1) {
 						pdfOutputStream.write(pdfByte);
 					}
-					pdfBytes = pdfOutputStream.toByteArray();
+					byte[] pdfBytes = pdfOutputStream.toByteArray();
+					pdfBase64 = Base64.getEncoder().encodeToString(pdfBytes);
+				} catch (IOException e) {
+					throw new RuntimeException("Failed to convert PDF file to Base64", e);
+				}
 
-					// Read XLSX bytes
+				// Convert XLSX to Base64
+				String xlsxBase64 = null;
+				try (FileInputStream xlsxInputStream = new FileInputStream(xlsxOutputPath);
+						ByteArrayOutputStream xlsxOutputStream = new ByteArrayOutputStream()) {
+
 					int xlsxByte;
 					while ((xlsxByte = xlsxInputStream.read()) != -1) {
 						xlsxOutputStream.write(xlsxByte);
 					}
-					xlsxBytes = xlsxOutputStream.toByteArray();
+					byte[] xlsxBytes = xlsxOutputStream.toByteArray();
+					xlsxBase64 = Base64.getEncoder().encodeToString(xlsxBytes);
+				} catch (IOException e) {
+					throw new RuntimeException("Failed to convert XLSX file to Base64", e);
 				}
 
 				String username = getUsernameFromSecurityContext();
@@ -421,12 +419,12 @@ public class ReportServiceImpl implements ReportService {
 				if (".pdf".equalsIgnoreCase(genType)) {
 					response.put(statusCode, successCode);
 					response.put(messageCode, "Jasper report PDF generated successfully");
-					data.put(attachmentCode, pdfBytes);
+					data.put(attachmentCode, pdfBase64); // Use Base64-encoded PDF string
 					response.put(dataCode, data);
 				} else {
 					response.put(statusCode, successCode); // Changed errorCode to successCode
 					response.put(messageCode, "Jasper report XLSX generated successfully");
-					data.put(attachmentCode, xlsxBytes); // Changed pdfBytes to xlsxBytes
+					data.put(attachmentCode, xlsxBase64); // Use Base64-encoded XLSX string
 					response.put(dataCode, data);
 				}
 			}
