@@ -81,6 +81,8 @@ public class SecurityConfig {
 				.and()
 				.authorizeHttpRequests().requestMatchers("/report/**").permitAll() 
 				.and()
+				.authorizeHttpRequests().requestMatchers("/common/**").permitAll() 
+				.and()
 				.sessionManagement() 
 				.sessionCreationPolicy(SessionCreationPolicy.STATELESS) 
 				.and() 

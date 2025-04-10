@@ -1,4 +1,4 @@
-package com.wenxt.common;
+package com.wenxt.docprint.common;
 
 import java.util.List;
 import java.util.Map;
@@ -10,5 +10,11 @@ public interface CommonDao {
 	QUERY_MASTER getQueryLov(Integer queryId);
 
 	List<Map<String, Object>> getMapQuery(String qm_QUERY, Map<String, Object> queryParameters);
+	
+	List<LOVDTO> executeLOVQuery(String query, Map<String, Object> paramList);
+	
+	List<QueryParamMasterDTO> getQueryParams(int sysId);
+
+
 
 }
