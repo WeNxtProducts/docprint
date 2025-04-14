@@ -31,10 +31,8 @@ public class CustomAuthenticationProvider implements AuthenticationProvider {
         String pass = user.getPassword();
 
         if (password.equals(encryptor.decrypt(pass)) && username.equals(user.getUsername())) {
-            // Authentication successful
             return new UsernamePasswordAuthenticationToken(username, password, user.getAuthorities());
         } else {
-            // Authentication failed
             throw new BadCredentialsException("Invalid username or password");
         }
     }

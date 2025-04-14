@@ -15,6 +15,7 @@ public class AuthRequest {
 	private String department;
 	private String company;
 	private String baseCurrency;
+	private String role;
 	
 	public String getUsername() {
 		return username;
@@ -51,6 +52,12 @@ public class AuthRequest {
 	}
 	public void setBaseCurrency(String baseCurrency) {
 		this.baseCurrency = baseCurrency;
+	}
+	public String getRole() {
+		return role;
+	}
+	public void setRole(String role) {
+		this.role = role;
 	} 
 	
 }
